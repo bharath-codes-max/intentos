@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CompiledRule, CompileResult, Condition } from "@/lib/api";
@@ -162,13 +163,12 @@ export function ContractWizard({ agents }: { agents: { id: string; label: string
                 ))}
               </div>
             </div>
-            <textarea
+            <Textarea
               id="intent"
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder={EXAMPLE}
               rows={9}
-              className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-[13px] leading-relaxed text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
           </div>
 

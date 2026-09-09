@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { EmptyState } from "@/components/common/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
+import { DataRow } from "@/components/ui/data-row";
 import { LiveRefresh } from "@/components/live-refresh";
 import { listRuns } from "@/lib/api";
 import { getCurrentOrgId } from "@/lib/current-org";
@@ -49,12 +49,24 @@ export default async function ActivityPage() {
         ) : (
           <div className="divide-y divide-border">
             {runs.map((run) => (
-              <Link
+              <DataRow
                 key={run.id}
                 href={`/activity/${run.id}`}
-                className="flex items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-white/[0.03]"
+                className="items-center"
+                trailing={
+                  <>
+                    <span className="text-[12px] text-muted-foreground">{run.activity_count} actions</span>
+                    <span className="text-[12px] text-status-allow">{run.allow_count}</span>
+                    <span className="text-[12px] text-status-review">{run.review_count}</span>
+                    <span className="text-[12px] text-status-block">{run.block_count}</span>
+                    <span className="w-16 text-right text-[12px] text-muted-foreground">
+                      {STATUS_LABEL[run.status] ?? run.status}
+                    </span>
+                    <ChevronRight className="size-3.5 text-faint-foreground" />
+                  </>
+                }
               >
-                <div className="flex min-w-0 items-center gap-3">
+                <div className="flex min-w-0 items-center gap-2.5">
                   <span className={`size-1.5 shrink-0 rounded-full ${STATUS_DOT[run.status] ?? "bg-faint-foreground"}`} />
                   <div className="min-w-0">
                     <p className="truncate text-[13px] font-medium text-foreground">
@@ -72,16 +84,7 @@ export default async function ActivityPage() {
                     </p>
                   </div>
                 </div>
-
-                <div className="flex shrink-0 items-center gap-4 text-[12px]">
-                  <span className="text-muted-foreground">{run.activity_count} actions</span>
-                  <span className="text-status-allow">{run.allow_count}</span>
-                  <span className="text-status-review">{run.review_count}</span>
-                  <span className="text-status-block">{run.block_count}</span>
-                  <span className="w-16 text-right text-muted-foreground">{STATUS_LABEL[run.status] ?? run.status}</span>
-                  <ChevronRight className="size-3.5 text-faint-foreground" />
-                </div>
-              </Link>
+              </DataRow>
             ))}
           </div>
         )}

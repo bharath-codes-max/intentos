@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
-import { Sidebar } from "@/components/sidebar";
+import { AppShell } from "@/components/ui/app-shell";
+import { ToastProvider } from "@/components/ui/toast";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { listOrgs } from "@/lib/api";
 import { getCurrentOrgId } from "@/lib/current-org";
 import "./globals.css";
@@ -26,10 +28,13 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`dark ${inter.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="flex h-full min-h-full">
-        <Sidebar orgs={orgs} currentOrgId={currentOrgId} />
-        <main className="min-w-0 flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-[1200px] px-8 py-7">{children}</div>
-        </main>
+        <ToastProvider>
+          <TooltipProvider>
+            <AppShell orgs={orgs} currentOrgId={currentOrgId}>
+              {children}
+            </AppShell>
+          </TooltipProvider>
+        </ToastProvider>
       </body>
     </html>
   );
