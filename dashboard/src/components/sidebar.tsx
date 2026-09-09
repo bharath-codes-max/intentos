@@ -81,13 +81,13 @@ export function Sidebar() {
         collapsed ? "w-[60px]" : "w-[228px]"
       )}
     >
-      <div className={cn("flex h-12 items-center gap-1.5", collapsed ? "justify-center px-2" : "px-3")}>
+      <div className={cn("flex h-12 items-center gap-2", collapsed ? "justify-center px-2" : "px-3.5")}>
         <Link href="/" className="flex shrink-0 items-center">
           <Logo size={19} />
         </Link>
         {!collapsed && (
           <>
-            <span className="shrink-0 text-[15px] font-medium tracking-tight text-foreground">Intentos</span>
+            <span className="shrink-0 text-[15px] font-bold tracking-tight text-foreground">Intentos</span>
             <NavSearch />
           </>
         )}
@@ -103,7 +103,7 @@ export function Sidebar() {
         )}
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 pt-3 pb-2">
+      <nav className="flex-1 overflow-y-auto px-3.5 pt-3 pb-2">
         <ul className="flex flex-col gap-[2px]">{TOP_NAV.map(renderItem)}</ul>
 
         {renderSection("Governance", GOVERNANCE_NAV, governanceOpen, setGovernanceOpen)}

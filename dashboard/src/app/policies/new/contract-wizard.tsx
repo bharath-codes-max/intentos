@@ -228,7 +228,7 @@ export function ContractWizard({ agents }: { agents: { id: string; label: string
               </p>
               <div className="space-y-2">
                 {items.map((rule) => (
-                  <div key={rule.id} className="flex items-start gap-3 rounded-md border border-border bg-panel p-3">
+                  <div key={rule.id} className="flex items-start gap-3 rounded-none border border-border bg-panel p-3">
                     <div className="min-w-0 flex-1">
                       <p className="text-[13px] font-medium text-foreground">{rule.reason}</p>
                       <p className="mt-0.5 font-mono text-[11.5px] text-muted-foreground">

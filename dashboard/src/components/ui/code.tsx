@@ -17,7 +17,7 @@ export function CodeBlock({ children, className }: { children: React.ReactNode; 
   return (
     <pre
       className={cn(
-        "overflow-x-auto rounded-md border border-border bg-black/30 p-3 font-mono text-[12px] leading-relaxed text-muted-foreground",
+        "overflow-x-auto rounded-none border border-border bg-black/30 p-3 font-mono text-[12px] leading-relaxed text-muted-foreground",
         className
       )}
     >

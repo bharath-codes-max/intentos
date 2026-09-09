@@ -70,7 +70,7 @@ export function PendingApprovals({ pending }: { pending: PendingApproval[] }) {
       )}
 
       {filtered.length === 0 ? (
-        <div className="rounded-lg border border-border bg-panel">
+        <div className="rounded-none border border-border bg-panel">
           <EmptyState icon={CheckCircledIcon} title="No matching approvals" description="Try clearing a filter or search term." />
         </div>
       ) : (
@@ -78,7 +78,7 @@ export function PendingApprovals({ pending }: { pending: PendingApproval[] }) {
           <DataRow
             key={a.id}
             icon={<ToolIcon toolName={a.tool_name} className="text-status-review" />}
-            className="rounded-lg border border-[color-mix(in_oklch,var(--status-review),transparent_65%)] bg-[var(--status-review-bg)] hover:bg-[var(--status-review-bg)]"
+            className="rounded-none border border-[color-mix(in_oklch,var(--status-review),transparent_65%)] bg-[var(--status-review-bg)] hover:bg-[var(--status-review-bg)]"
             trailing={<ApprovalButtons id={a.id} />}
           >
             <p className="text-[13px] font-medium text-foreground">
@@ -115,7 +115,7 @@ export function ResolvedApprovals({ resolved }: { resolved: ResolvedApproval[] }
   }, [resolved, filter, sortDir]);
 
   return (
-    <section className="rounded-lg border border-border bg-panel">
+    <section className="rounded-none border border-border bg-panel">
       <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-2.5">
         <h2 className="text-[13.5px] font-medium text-foreground">Recently resolved</h2>
         <div className="flex items-center gap-2">

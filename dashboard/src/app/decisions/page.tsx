@@ -16,7 +16,7 @@ export default async function DecisionsPage() {
         actions={<LiveRefresh />}
       />
 
-      <div className="rounded-lg border border-border bg-panel">
+      <div className="rounded-none border border-border bg-panel">
         <DecisionsTable decisions={decisions} />
       </div>
     </div>

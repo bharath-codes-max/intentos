@@ -19,7 +19,7 @@ export default async function ApprovalsPage() {
       />
 
       {pending.length === 0 ? (
-        <div className="rounded-lg border border-border bg-panel">
+        <div className="rounded-none border border-border bg-panel">
           <EmptyState
             icon={CheckCircledIcon}
             title="Nothing waiting on you"

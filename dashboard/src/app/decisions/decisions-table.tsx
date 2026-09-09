@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import Link from "next/link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { VerdictBadge } from "@/components/verdict-badge";
@@ -11,11 +11,17 @@ import { EmptyState } from "@/components/common/empty-state";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { SearchInput } from "@/components/ui/search-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MixIcon, ExternalLinkIcon, ArrowUpIcon, ArrowDownIcon } from "@radix-ui/react-icons";
+import { MixIcon, ExternalLinkIcon, ArrowUpIcon, ArrowDownIcon, ChevronDownIcon } from "@radix-ui/react-icons";
 import type { Decision } from "@/lib/api";
 
 type DecisionFilter = "all" | "allow" | "review" | "block";
 type SortDir = "desc" | "asc";
+
+const GROUPS: { key: "review" | "block" | "allow"; label: string; dot: string }[] = [
+  { key: "review", label: "Needs review", dot: "bg-status-review" },
+  { key: "block", label: "Blocked", dot: "bg-status-block" },
+  { key: "allow", label: "Allowed", dot: "bg-status-allow" },
+];
 
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleString(undefined, {
@@ -39,6 +45,11 @@ export function DecisionsTable({ decisions }: { decisions: Decision[] }) {
   const [agentFilter, setAgentFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    review: true,
+    block: true,
+    allow: true,
+  });
 
   const agents = useMemo(() => {
     const set = new Set<string>();
@@ -64,6 +75,33 @@ export function DecisionsTable({ decisions }: { decisions: Decision[] }) {
       return sortDir === "asc" ? diff : -diff;
     });
   }, [decisions, decisionFilter, agentFilter, search, sortDir]);
+
+  const grouped = decisionFilter === "all";
+
+  function renderRow(d: Decision) {
+    return (
+      <TableRow key={d.id} className="cursor-pointer" onClick={() => setSelected(d)}>
+        <TableCell className="text-muted-foreground">{formatTime(d.created_at)}</TableCell>
+        <TableCell className="text-foreground">{d.agent_label ?? "—"}</TableCell>
+        <TableCell className="font-mono text-[12px] text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <ToolIcon toolName={d.tool_name} />
+            {d.tool_name}
+          </span>
+        </TableCell>
+        <TableCell className="max-w-md truncate font-mono text-[12px] text-muted-foreground">
+          {summarizeInput(d.tool_input)}
+        </TableCell>
+        <TableCell>
+          <VerdictBadge verdict={d.decision} />
+        </TableCell>
+        <TableCell className="max-w-xs truncate text-muted-foreground">{d.matched_rule ?? "—"}</TableCell>
+        <TableCell className="text-right text-muted-foreground">
+          {d.approval_status ? d.approval_status : d.decision === "allow" ? "executed" : "—"}
+        </TableCell>
+      </TableRow>
+    );
+  }
 
   if (decisions.length === 0) {
     return (
@@ -136,30 +174,34 @@ export function DecisionsTable({ decisions }: { decisions: Decision[] }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filtered.map((d) => (
-            <TableRow key={d.id} className="cursor-pointer" onClick={() => setSelected(d)}>
-              <TableCell className="text-muted-foreground">{formatTime(d.created_at)}</TableCell>
-              <TableCell className="text-foreground">{d.agent_label ?? "—"}</TableCell>
-              <TableCell className="font-mono text-[12px] text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <ToolIcon toolName={d.tool_name} />
-                  {d.tool_name}
-                </span>
-              </TableCell>
-              <TableCell className="max-w-md truncate font-mono text-[12px] text-muted-foreground">
-                {summarizeInput(d.tool_input)}
-              </TableCell>
-              <TableCell>
-                <VerdictBadge verdict={d.decision} />
-              </TableCell>
-              <TableCell className="max-w-xs truncate text-muted-foreground">
-                {d.matched_rule ?? "—"}
-              </TableCell>
-              <TableCell className="text-right text-muted-foreground">
-                {d.approval_status ? d.approval_status : d.decision === "allow" ? "executed" : "—"}
-              </TableCell>
-            </TableRow>
-          ))}
+          {grouped
+            ? GROUPS.map((g) => {
+                const rows = filtered.filter((d) => d.decision === g.key);
+                if (rows.length === 0) return null;
+                const open = openGroups[g.key];
+                return (
+                  <Fragment key={g.key}>
+                    <TableRow className="cursor-default border-border hover:bg-transparent">
+                      <TableCell colSpan={7} className="bg-panel-raised py-2">
+                        <button
+                          type="button"
+                          onClick={() => setOpenGroups((s) => ({ ...s, [g.key]: !s[g.key] }))}
+                          className="flex items-center gap-2 text-[12.5px] font-medium text-foreground"
+                        >
+                          <ChevronDownIcon className={`size-3 transition-transform ${!open ? "-rotate-90" : ""}`} />
+                          <span className={`size-1.5 rounded-full ${g.dot}`} />
+                          {g.label}
+                          <span className="rounded-full bg-white/[0.08] px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                            {rows.length}
+                          </span>
+                        </button>
+                      </TableCell>
+                    </TableRow>
+                    {open && rows.map((d) => renderRow(d))}
+                  </Fragment>
+                );
+              })
+            : filtered.map((d) => renderRow(d))}
         </TableBody>
       </Table>
       )}

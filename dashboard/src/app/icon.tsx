@@ -17,7 +17,7 @@ export default function Icon() {
           background: "#08090A",
         }}
       >
-        <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
+        <svg width="20" height="20" viewBox="-3 -3 26 26" fill="none">
           <rect
             x="-0.2"
             y="1.9"

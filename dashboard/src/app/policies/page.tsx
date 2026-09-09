@@ -30,7 +30,7 @@ export default async function PoliciesPage() {
         }
       />
 
-      <div className="rounded-lg border border-border bg-panel">
+      <div className="rounded-none border border-border bg-panel">
         {contracts.length === 0 ? (
           <EmptyState
             icon={FileTextIcon}

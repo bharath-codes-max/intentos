@@ -72,7 +72,7 @@ export default async function OverviewPage() {
       )}
 
       {approvals.length > 0 && (
-        <div className="rounded-lg border border-[color-mix(in_oklch,var(--status-review),transparent_60%)] bg-[var(--status-review-bg)] px-4 py-3">
+        <div className="rounded-none border border-[color-mix(in_oklch,var(--status-review),transparent_60%)] bg-[var(--status-review-bg)] px-4 py-3">
           <div className="flex items-center justify-between">
             <p className="text-[13px] font-medium text-foreground">
               {approvals.length} action{approvals.length === 1 ? "" : "s"} waiting on your approval
@@ -87,7 +87,7 @@ export default async function OverviewPage() {
         </div>
       )}
 
-      <section className="rounded-lg border border-border bg-panel">
+      <section className="rounded-none border border-border bg-panel">
         <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
           <h2 className="text-[13.5px] font-medium text-foreground">Recent decisions</h2>
           <Link href="/decisions" className="text-[12.5px] text-muted-foreground hover:text-foreground">
@@ -154,7 +154,7 @@ function StatCard({
 }) {
   return (
     <div
-      className="rounded-2xl px-4 py-3.5 transition-transform duration-200 ease-out will-change-transform hover:-translate-y-1 hover:shadow-[0_12px_28px_rgba(0,0,0,0.35)]"
+      className="rounded-none px-4 py-3.5 transition-transform duration-200 ease-out will-change-transform hover:-translate-y-1 hover:shadow-[0_12px_28px_rgba(0,0,0,0.35)]"
       style={{ background: STAT_COLORS[tone] }}
     >
       <Icon className="size-4 text-black/60" />

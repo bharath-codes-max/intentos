@@ -33,7 +33,7 @@ export default async function AgentsPage({
         actions={<NewTokenDialog />}
       />
 
-      <div className="rounded-lg border border-border bg-panel">
+      <div className="rounded-none border border-border bg-panel">
         <AgentsTable tokens={tokens} lastActivityByLabel={lastActivityByLabel} />
       </div>
     </div>
