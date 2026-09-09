@@ -70,7 +70,7 @@ export function NavSearch() {
               onClick={() => go(item.href)}
               className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-[13.5px] text-foreground transition-colors hover:bg-sidebar-accent"
             >
-              <item.icon className="size-[15px] shrink-0 text-muted-foreground" />
+              <item.icon className="size-[15px] shrink-0" style={{ color: item.color }} />
               {item.label}
             </button>
           ))}

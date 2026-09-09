@@ -1,6 +1,6 @@
 export function Logo({ size = 20 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="-3 -3 26 26" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+    <svg width={size} height={size} viewBox="-2 -8 25 25" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
       <rect
         x="6"
         y="10.6"

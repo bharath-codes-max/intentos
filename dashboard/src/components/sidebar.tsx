@@ -43,7 +43,7 @@ export function Sidebar() {
         >
           <item.icon
             className="size-[15px] shrink-0"
-            style={item.colorVar ? { color: `var(${item.colorVar})` } : undefined}
+            style={{ color: item.color }}
           />
           {!collapsed && <span className="truncate">{item.label}</span>}
         </Link>

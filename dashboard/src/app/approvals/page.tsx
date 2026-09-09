@@ -16,6 +16,8 @@ export default async function ApprovalsPage() {
         title="Approvals"
         description="Actions paused for human review. Nothing here executes until you decide."
         actions={<LiveRefresh />}
+        icon={CheckCircledIcon}
+        iconColor="var(--status-review)"
       />
 
       {pending.length === 0 ? (

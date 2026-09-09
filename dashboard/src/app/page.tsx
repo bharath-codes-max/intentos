@@ -1,6 +1,8 @@
 import Link from "next/link";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusIndicator } from "@/components/ui/status-indicator";
+import { DataRow } from "@/components/ui/data-row";
+import { AvatarChip } from "@/components/ui/avatar-chip";
+import { ToolIcon } from "@/components/tool-icon";
 import { EmptyState } from "@/components/common/empty-state";
 import { decisionSummary, listDecisions, listApprovals, listTokens } from "@/lib/api";
 import { getCurrentOrgId } from "@/lib/current-org";
@@ -14,6 +16,7 @@ import {
   CheckCircledIcon,
   ExclamationTriangleIcon,
   CrossCircledIcon,
+  DashboardIcon,
 } from "@radix-ui/react-icons";
 import type { ComponentType } from "react";
 
@@ -50,6 +53,8 @@ export default async function OverviewPage() {
         title="Overview"
         description="Every action your agents attempt, checked in real time."
         actions={<LiveRefresh />}
+        icon={DashboardIcon}
+        iconColor="#7FC6EC"
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -103,30 +108,28 @@ export default async function OverviewPage() {
             />
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Decision</TableHead>
-                <TableHead>Agent</TableHead>
-                <TableHead>Tool</TableHead>
-                <TableHead>Reason</TableHead>
-                <TableHead className="text-right">Time</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {decisions.map((d) => (
-                <TableRow key={d.id}>
-                  <TableCell>
+          <div className="divide-y divide-white/[0.06]">
+            {decisions.map((d) => (
+              <DataRow
+                key={d.id}
+                icon={<ToolIcon toolName={d.tool_name} />}
+                trailing={
+                  <>
                     <StatusIndicator status={d.decision} />
-                  </TableCell>
-                  <TableCell className="text-foreground">{d.agent_label ?? "—"}</TableCell>
-                  <TableCell className="font-mono text-[12px] text-muted-foreground">{d.tool_name}</TableCell>
-                  <TableCell className="max-w-md truncate text-muted-foreground">{d.reason}</TableCell>
-                  <TableCell className="text-right text-muted-foreground">{timeAgo(d.created_at)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    <AvatarChip label={d.agent_label} />
+                    <span className="w-16 shrink-0 text-right text-[12px] text-muted-foreground">
+                      {timeAgo(d.created_at)}
+                    </span>
+                  </>
+                }
+              >
+                <p className="truncate text-[13px] font-medium text-foreground">{d.reason}</p>
+                <p className="mt-0.5 truncate font-mono text-[12px] text-muted-foreground">
+                  {d.tool_name} · {d.agent_label ?? "Unknown agent"}
+                </p>
+              </DataRow>
+            ))}
+          </div>
         )}
       </section>
     </div>

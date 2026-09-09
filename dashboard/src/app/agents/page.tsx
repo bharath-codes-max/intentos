@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/ui/page-header";
+import { CubeIcon } from "@radix-ui/react-icons";
 import { listTokens, listDecisions } from "@/lib/api";
 import { getCurrentOrgId } from "@/lib/current-org";
 import { NewTokenDialog } from "./new-token-dialog";
@@ -31,6 +32,8 @@ export default async function AgentsPage({
         title="Agents"
         description="Every agent token issued to this company."
         actions={<NewTokenDialog />}
+        icon={CubeIcon}
+        iconColor="#B39CE8"
       />
 
       <AgentsTable tokens={tokens} lastActivityByLabel={lastActivityByLabel} />
