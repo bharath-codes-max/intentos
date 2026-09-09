@@ -17,7 +17,7 @@ import {
   CrossCircledIcon,
   DashboardIcon,
 } from "@radix-ui/react-icons";
-import type { ComponentType } from "react";
+import type { ComponentType, CSSProperties } from "react";
 
 function timeAgo(iso: string): string {
   const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
@@ -44,8 +44,6 @@ export default async function OverviewPage() {
   const block = Number(summary.block);
   const activeAgents = tokens.filter((t) => !t.revoked_at).length;
 
-  const pct = (n: number) => (total > 0 ? (n / total) * 100 : 0);
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -53,27 +51,16 @@ export default async function OverviewPage() {
         description="Every action your agents attempt, checked in real time."
         actions={<LiveRefresh />}
         icon={DashboardIcon}
-        iconColor="#7FC6EC"
+        iconColor="#FF3D9A"
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <StatCard label="Agents connected" value={activeAgents} tone="purple" icon={CubeIcon} />
-        <StatCard label="Total checks" value={total} tone="blue" icon={ActivityLogIcon} />
-        <StatCard label="Allowed" value={allow} tone="green" icon={CheckCircledIcon} />
-        <StatCard label="Needs review" value={review} tone="yellow" icon={ExclamationTriangleIcon} />
-        <StatCard label="Blocked" value={block} tone="orange" icon={CrossCircledIcon} />
+        <StatCard label="Agents connected" value={activeAgents} iconColor="#B39CE8" icon={CubeIcon} />
+        <StatCard label="Total checks" value={total} iconColor="#7FC6EC" icon={ActivityLogIcon} />
+        <StatCard label="Allowed" value={allow} iconColor="#A9D66B" icon={CheckCircledIcon} />
+        <StatCard label="Needs review" value={review} iconColor="#F2C438" icon={ExclamationTriangleIcon} />
+        <StatCard label="Blocked" value={block} iconColor="#EE9A5C" icon={CrossCircledIcon} />
       </div>
-
-      {total > 0 && (
-        <div
-          className="flex h-1 w-full overflow-hidden rounded-full bg-white/[0.05]"
-          style={{ boxShadow: "0 0 16px rgba(63,185,80,.06), 0 0 16px rgba(229,83,75,.06)" }}
-        >
-          <div className="h-full bg-status-allow" style={{ width: `${pct(allow)}%` }} />
-          <div className="h-full bg-status-review" style={{ width: `${pct(review)}%` }} />
-          <div className="h-full bg-status-block" style={{ width: `${pct(block)}%` }} />
-        </div>
-      )}
 
       {approvals.length > 0 && (
         <div className="rounded-none border border-[color-mix(in_oklch,var(--status-review),transparent_60%)] bg-[var(--status-review-bg)] px-4 py-3">
@@ -91,9 +78,11 @@ export default async function OverviewPage() {
         </div>
       )}
 
-      <section>
-        <div className="flex items-center justify-between border-b border-white/[0.06] px-2 pb-2.5">
-          <h2 className="text-[13px] font-medium text-foreground">Recent decisions</h2>
+      <section className="rounded-none border border-white/[0.1] bg-panel-raised shadow-[0_4px_16px_rgba(0,0,0,0.3)]">
+        <div className="flex items-center justify-between border-b border-white/[0.08] px-4 py-3">
+          <h2 className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+            Recent decisions
+          </h2>
           <Link href="/decisions" className="text-[12.5px] text-muted-foreground hover:text-foreground">
             View all
           </Link>
@@ -137,35 +126,24 @@ export default async function OverviewPage() {
   );
 }
 
-const STAT_COLORS = {
-  yellow: "#F2C438",
-  orange: "#EE9A5C",
-  green: "#A9D66B",
-  purple: "#B39CE8",
-  blue: "#7FC6EC",
-} as const;
-
 function StatCard({
   label,
   value,
-  tone,
+  iconColor,
   icon: Icon,
 }: {
   label: string;
   value: number;
-  tone: keyof typeof STAT_COLORS;
-  icon: ComponentType<{ className?: string }>;
+  iconColor: string;
+  icon: ComponentType<{ className?: string; style?: CSSProperties }>;
 }) {
   return (
-    <div
-      className="rounded-none px-4 py-3.5 transition-transform duration-200 ease-out will-change-transform hover:-translate-y-1 hover:shadow-[0_12px_28px_rgba(0,0,0,0.35)]"
-      style={{ background: STAT_COLORS[tone] }}
-    >
-      <Icon className="size-4 text-black/60" />
-      <p className="mt-3 text-[30px] font-bold tabular-nums leading-none tracking-tight text-black">
+    <div className="rounded-none border border-white/[0.1] bg-panel-raised px-4 py-3.5 shadow-[0_6px_20px_rgba(0,0,0,0.4)] transition-transform duration-200 ease-out will-change-transform hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(0,0,0,0.5)]">
+      <Icon className="size-4" style={{ color: iconColor }} />
+      <p className="mt-3 text-[28px] font-bold tabular-nums leading-none tracking-tight text-white">
         {value}
       </p>
-      <p className="mt-1.5 text-[12.5px] font-medium text-black/65">{label}</p>
+      <p className="mt-1.5 text-[12.5px] font-medium text-muted-foreground">{label}</p>
     </div>
   );
 }
