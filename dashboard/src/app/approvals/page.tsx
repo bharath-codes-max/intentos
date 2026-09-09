@@ -1,6 +1,7 @@
 import { EmptyState } from "@/components/common/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Code } from "@/components/ui/code";
+import { ToolIcon } from "@/components/tool-icon";
 import { listApprovals, listResolvedApprovals } from "@/lib/api";
 import { getCurrentOrgId } from "@/lib/current-org";
 import { LiveRefresh } from "@/components/live-refresh";
@@ -49,19 +50,24 @@ export default async function ApprovalsPage() {
               key={a.id}
               className="flex items-start justify-between gap-4 rounded-lg border border-[color-mix(in_oklch,var(--status-review),transparent_65%)] bg-[var(--status-review-bg)] p-3.5"
             >
-              <div className="min-w-0 space-y-1">
-                <p className="text-[13px] font-medium text-foreground">
-                  {a.agent_label ?? "Unknown agent"}
-                  <span className="text-muted-foreground"> requested </span>
-                  <Code>{a.tool_name}</Code>
-                </p>
-                <p className="truncate font-mono text-[12px] text-muted-foreground">
-                  {summarizeInput(a.tool_input)}
-                </p>
-                <p className="text-[12.5px] text-muted-foreground">{a.reason}</p>
-                <div className="flex items-center gap-3 pt-0.5 text-[11.5px] text-faint-foreground">
-                  {a.matched_rule && <span>Rule: {a.matched_rule}</span>}
-                  <span>{timeAgo(a.created_at)}</span>
+              <div className="flex min-w-0 items-start gap-3">
+                <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md bg-white/[0.06]">
+                  <ToolIcon toolName={a.tool_name} className="text-status-review" />
+                </span>
+                <div className="min-w-0 space-y-1">
+                  <p className="text-[13px] font-medium text-foreground">
+                    {a.agent_label ?? "Unknown agent"}
+                    <span className="text-muted-foreground"> requested </span>
+                    <Code>{a.tool_name}</Code>
+                  </p>
+                  <p className="truncate font-mono text-[12px] text-muted-foreground">
+                    {summarizeInput(a.tool_input)}
+                  </p>
+                  <p className="text-[12.5px] text-muted-foreground">{a.reason}</p>
+                  <div className="flex items-center gap-3 pt-0.5 text-[11.5px] text-faint-foreground">
+                    {a.matched_rule && <span>Rule: {a.matched_rule}</span>}
+                    <span>{timeAgo(a.created_at)}</span>
+                  </div>
                 </div>
               </div>
               <ApprovalButtons id={a.id} />

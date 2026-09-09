@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { VerdictBadge, ExecutionStatusBadge } from "@/components/verdict-badge";
+import { ToolIcon } from "@/components/tool-icon";
 import { getRun } from "@/lib/api";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -91,8 +92,11 @@ export default async function RunDetailPage({ params }: { params: Promise<{ id: 
           ) : (
             <div className="divide-y divide-border">
               {run.events.map((e) => (
-                <div key={e.id} className="flex items-start justify-between gap-4 py-3">
-                  <div className="min-w-0">
+                <div key={e.id} className="flex items-start gap-3 py-3">
+                  <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md bg-white/[0.05]">
+                    <ToolIcon toolName={e.tool ?? ""} />
+                  </span>
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-xs tabular-nums text-muted-foreground">
                         {new Date(e.timestamp).toLocaleTimeString()}
@@ -127,7 +131,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ id: 
                     )}
                     {e.error_summary && <p className="mt-1 text-[12px] text-status-block">{e.error_summary}</p>}
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
+                  <div className="ml-auto flex shrink-0 items-center gap-2">
                     {e.decision && <VerdictBadge verdict={e.decision} />}
                     <ExecutionStatusBadge status={e.execution_status} />
                   </div>

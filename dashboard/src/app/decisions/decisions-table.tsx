@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { VerdictBadge } from "@/components/verdict-badge";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerBody } from "@/components/ui/drawer";
 import { Code, CodeBlock } from "@/components/ui/code";
+import { ToolIcon } from "@/components/tool-icon";
 import { EmptyState } from "@/components/common/empty-state";
 import { ListChecks } from "lucide-react";
 import type { Decision } from "@/lib/api";
@@ -57,7 +58,12 @@ export function DecisionsTable({ decisions }: { decisions: Decision[] }) {
             <TableRow key={d.id} className="cursor-pointer" onClick={() => setSelected(d)}>
               <TableCell className="text-muted-foreground">{formatTime(d.created_at)}</TableCell>
               <TableCell className="text-foreground">{d.agent_label ?? "—"}</TableCell>
-              <TableCell className="font-mono text-[12px] text-muted-foreground">{d.tool_name}</TableCell>
+              <TableCell className="font-mono text-[12px] text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <ToolIcon toolName={d.tool_name} />
+                  {d.tool_name}
+                </span>
+              </TableCell>
               <TableCell className="max-w-64 truncate font-mono text-[12px] text-muted-foreground">
                 {summarizeInput(d.tool_input)}
               </TableCell>

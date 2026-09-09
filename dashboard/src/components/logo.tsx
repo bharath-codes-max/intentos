@@ -2,22 +2,22 @@ export function Logo({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
       <rect
-        x="7.6"
-        y="1.2"
+        x="6"
+        y="10.6"
         width="14.2"
         height="6.4"
         rx="3.2"
-        transform="rotate(35 7.6 1.2)"
-        fill="url(#intentos-logo-a)"
+        transform="rotate(-35 6 10.6)"
+        fill="url(#intentos-logo-b)"
       />
       <rect
-        x="-1.2"
-        y="10.9"
+        x="-0.2"
+        y="1.9"
         width="14.2"
         height="6.4"
         rx="3.2"
-        transform="rotate(35 -1.2 10.9)"
-        fill="url(#intentos-logo-b)"
+        transform="rotate(-35 -0.2 1.9)"
+        fill="url(#intentos-logo-a)"
       />
       <defs>
         <linearGradient id="intentos-logo-a" x1="7.6" y1="1.2" x2="21.8" y2="7.6" gradientUnits="userSpaceOnUse">

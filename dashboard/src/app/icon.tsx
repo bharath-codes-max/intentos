@@ -19,21 +19,21 @@ export default function Icon() {
       >
         <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
           <rect
-            x="7.6"
-            y="1.2"
+            x="-0.2"
+            y="1.9"
             width="14.2"
             height="6.4"
             rx="3.2"
-            transform="rotate(35 7.6 1.2)"
+            transform="rotate(-35 -0.2 1.9)"
             fill="url(#a)"
           />
           <rect
-            x="-1.2"
-            y="10.9"
+            x="6"
+            y="10.6"
             width="14.2"
             height="6.4"
             rx="3.2"
-            transform="rotate(35 -1.2 10.9)"
+            transform="rotate(-35 6 10.6)"
             fill="url(#b)"
           />
           <defs>
