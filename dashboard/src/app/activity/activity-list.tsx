@@ -3,6 +3,9 @@
 import { useMemo, useState } from "react";
 import { EmptyState } from "@/components/common/empty-state";
 import { DataRow } from "@/components/ui/data-row";
+import { Chip } from "@/components/ui/chip";
+import { AvatarChip } from "@/components/ui/avatar-chip";
+import { ListGroupHeader } from "@/components/ui/list-group-header";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { SearchInput } from "@/components/ui/search-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,6 +14,13 @@ import type { AgentRun } from "@/lib/api";
 
 type StatusFilter = "all" | "running" | "completed" | "failed" | "cancelled";
 type SortDir = "desc" | "asc";
+
+const GROUPS: { key: "running" | "completed" | "failed" | "cancelled"; label: string; dot: string }[] = [
+  { key: "running", label: "Running", dot: "bg-status-review" },
+  { key: "failed", label: "Failed", dot: "bg-status-block" },
+  { key: "completed", label: "Completed", dot: "bg-status-allow" },
+  { key: "cancelled", label: "Cancelled", dot: "bg-faint-foreground" },
+];
 
 function formatDuration(startedAt: string, endedAt: string | null): string {
   const end = endedAt ? new Date(endedAt).getTime() : Date.now();
@@ -27,18 +37,17 @@ const STATUS_LABEL: Record<string, string> = {
   cancelled: "Cancelled",
 };
 
-const STATUS_DOT: Record<string, string> = {
-  running: "bg-status-review",
-  completed: "bg-status-allow",
-  failed: "bg-status-block",
-  cancelled: "bg-faint-foreground",
-};
-
 export function ActivityList({ runs }: { runs: AgentRun[] }) {
   const [status, setStatus] = useState<StatusFilter>("all");
   const [agent, setAgent] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    running: true,
+    failed: true,
+    completed: true,
+    cancelled: true,
+  });
 
   const agents = useMemo(() => {
     const set = new Set<string>();
@@ -59,6 +68,44 @@ export function ActivityList({ runs }: { runs: AgentRun[] }) {
       return sortDir === "asc" ? diff : -diff;
     });
   }, [runs, status, agent, search, sortDir]);
+
+  const grouped = status === "all";
+
+  function renderRow(run: AgentRun) {
+    return (
+      <DataRow
+        key={run.id}
+        href={`/activity/${run.id}`}
+        icon={<ActivityLogIcon className="size-[14px]" />}
+        trailing={
+          <>
+            <Chip label={`${run.activity_count} actions`} />
+            <span className="flex items-center gap-2 text-[12px]">
+              <span className="text-status-allow">{run.allow_count}</span>
+              <span className="text-status-review">{run.review_count}</span>
+              <span className="text-status-block">{run.block_count}</span>
+            </span>
+            <AvatarChip label={run.agent_label ?? run.provider} />
+            <span className="w-16 shrink-0 text-right text-[12px] text-muted-foreground">
+              {formatDuration(run.started_at, run.ended_at)}
+            </span>
+            <ChevronRightIcon className="size-3.5 shrink-0 text-faint-foreground" />
+          </>
+        }
+      >
+        <p className="truncate text-[13px] font-medium text-foreground">{run.task_summary ?? "Untitled run"}</p>
+        <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
+          {run.agent_label ?? run.provider} ·{" "}
+          {new Date(run.started_at).toLocaleString(undefined, {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </p>
+      </DataRow>
+    );
+  }
 
   if (runs.length === 0) {
     return (
@@ -104,7 +151,7 @@ export function ActivityList({ runs }: { runs: AgentRun[] }) {
         <button
           type="button"
           onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
-          className="flex items-center gap-1 text-[12.5px] text-muted-foreground transition-colors hover:text-foreground"
+          className="ml-auto flex items-center gap-1 text-[12.5px] text-muted-foreground transition-colors hover:text-foreground"
         >
           {sortDir === "desc" ? "Newest first" : "Oldest first"}
           {sortDir === "desc" ? <ArrowDownIcon className="size-3" /> : <ArrowUpIcon className="size-3" />}
@@ -115,47 +162,28 @@ export function ActivityList({ runs }: { runs: AgentRun[] }) {
         <div className="p-2">
           <EmptyState icon={ActivityLogIcon} title="No matching runs" description="Try clearing a filter or search term." />
         </div>
-      ) : (
-        <div className="divide-y divide-border">
-          {filtered.map((run) => (
-            <DataRow
-              key={run.id}
-              href={`/activity/${run.id}`}
-              className="items-center"
-              trailing={
-                <>
-                  <span className="text-[12px] text-muted-foreground">{run.activity_count} actions</span>
-                  <span className="text-[12px] text-status-allow">{run.allow_count}</span>
-                  <span className="text-[12px] text-status-review">{run.review_count}</span>
-                  <span className="text-[12px] text-status-block">{run.block_count}</span>
-                  <span className="w-16 text-right text-[12px] text-muted-foreground">
-                    {STATUS_LABEL[run.status] ?? run.status}
-                  </span>
-                  <ChevronRightIcon className="size-3.5 text-faint-foreground" />
-                </>
-              }
-            >
-              <div className="flex min-w-0 items-center gap-2.5">
-                <span className={`size-1.5 shrink-0 rounded-full ${STATUS_DOT[run.status] ?? "bg-faint-foreground"}`} />
-                <div className="min-w-0">
-                  <p className="truncate text-[13px] font-medium text-foreground">
-                    {run.task_summary ?? "Untitled run"}
-                  </p>
-                  <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
-                    {run.agent_label ?? run.provider} ·{" "}
-                    {new Date(run.started_at).toLocaleString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}{" "}
-                    · {formatDuration(run.started_at, run.ended_at)}
-                  </p>
-                </div>
+      ) : grouped ? (
+        <div>
+          {GROUPS.map((g) => {
+            const rows = filtered.filter((r) => r.status === g.key);
+            if (rows.length === 0) return null;
+            const open = openGroups[g.key];
+            return (
+              <div key={g.key}>
+                <ListGroupHeader
+                  label={g.label}
+                  count={rows.length}
+                  dotColor={g.dot}
+                  open={open}
+                  onToggle={() => setOpenGroups((s) => ({ ...s, [g.key]: !s[g.key] }))}
+                />
+                {open && <div className="divide-y divide-border">{rows.map(renderRow)}</div>}
               </div>
-            </DataRow>
-          ))}
+            );
+          })}
         </div>
+      ) : (
+        <div className="divide-y divide-border">{filtered.map(renderRow)}</div>
       )}
     </>
   );

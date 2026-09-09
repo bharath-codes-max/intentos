@@ -9,6 +9,9 @@ import { FilterBar } from "@/components/ui/filter-bar";
 import { SearchInput } from "@/components/ui/search-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ApprovalButtons } from "./approval-buttons";
+import { Chip } from "@/components/ui/chip";
+import { AvatarChip } from "@/components/ui/avatar-chip";
+import { ListGroupHeader } from "@/components/ui/list-group-header";
 import { CheckCircledIcon, ArrowUpIcon, ArrowDownIcon } from "@radix-ui/react-icons";
 import type { PendingApproval, ResolvedApproval } from "@/lib/api";
 
@@ -102,9 +105,15 @@ export function PendingApprovals({ pending }: { pending: PendingApproval[] }) {
 type ResolvedFilter = "all" | "approved" | "denied";
 type SortDir = "desc" | "asc";
 
+const GROUPS: { key: "approved" | "denied"; label: string; dot: string }[] = [
+  { key: "approved", label: "Approved", dot: "bg-status-allow" },
+  { key: "denied", label: "Denied", dot: "bg-status-block" },
+];
+
 export function ResolvedApprovals({ resolved }: { resolved: ResolvedApproval[] }) {
   const [filter, setFilter] = useState<ResolvedFilter>("all");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ approved: true, denied: true });
 
   const filtered = useMemo(() => {
     const rows = resolved.filter((r) => filter === "all" || r.approval_status === filter);
@@ -113,6 +122,37 @@ export function ResolvedApprovals({ resolved }: { resolved: ResolvedApproval[] }
       return sortDir === "asc" ? diff : -diff;
     });
   }, [resolved, filter, sortDir]);
+
+  const grouped = filter === "all";
+
+  function renderRow(r: ResolvedApproval) {
+    return (
+      <DataRow
+        key={r.id}
+        icon={<ToolIcon toolName={r.tool_name} />}
+        trailing={
+          <>
+            {!grouped && (
+              <Chip
+                label={r.approval_status}
+                color={r.approval_status === "approved" ? "var(--status-allow)" : "var(--status-block)"}
+              />
+            )}
+            <span className="text-[12px] text-muted-foreground">{r.reviewer}</span>
+            <AvatarChip label={r.reviewer} />
+            <span className="w-24 shrink-0 text-right text-[12px] text-muted-foreground">
+              {new Date(r.resolved_at).toLocaleDateString()}
+            </span>
+          </>
+        }
+      >
+        <p className="truncate text-[13px] font-medium text-foreground">{r.reason}</p>
+        <p className="mt-0.5 truncate font-mono text-[12px] text-muted-foreground">
+          {r.tool_name} · {r.agent_label ?? "Unknown agent"}
+        </p>
+      </DataRow>
+    );
+  }
 
   return (
     <section className="rounded-none border border-border bg-panel">
@@ -140,25 +180,28 @@ export function ResolvedApprovals({ resolved }: { resolved: ResolvedApproval[] }
       </div>
       {filtered.length === 0 ? (
         <div className="px-4 py-6 text-center text-[12.5px] text-muted-foreground">No matching resolutions.</div>
-      ) : (
-        <div className="divide-y divide-border px-4">
-          {filtered.map((r) => (
-            <div key={r.id} className="flex items-center justify-between gap-4 py-2.5">
-              <div className="min-w-0">
-                <p className="truncate text-[13px] text-foreground">
-                  {r.agent_label ?? "Unknown agent"} — <span className="font-mono text-[12px]">{r.tool_name}</span>
-                </p>
-                <p className="truncate text-[12px] text-muted-foreground">{r.reason}</p>
+      ) : grouped ? (
+        <div>
+          {GROUPS.map((g) => {
+            const rows = filtered.filter((r) => r.approval_status === g.key);
+            if (rows.length === 0) return null;
+            const open = openGroups[g.key];
+            return (
+              <div key={g.key}>
+                <ListGroupHeader
+                  label={g.label}
+                  count={rows.length}
+                  dotColor={g.dot}
+                  open={open}
+                  onToggle={() => setOpenGroups((s) => ({ ...s, [g.key]: !s[g.key] }))}
+                />
+                {open && <div className="divide-y divide-border">{rows.map(renderRow)}</div>}
               </div>
-              <div className="shrink-0 text-right text-[12px]">
-                <p className={r.approval_status === "approved" ? "text-status-allow" : "text-status-block"}>
-                  {r.approval_status} by {r.reviewer}
-                </p>
-                <p className="text-faint-foreground">{new Date(r.resolved_at).toLocaleString()}</p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
+      ) : (
+        <div className="divide-y divide-border">{filtered.map(renderRow)}</div>
       )}
     </section>
   );

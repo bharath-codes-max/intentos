@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { DataRow } from "@/components/ui/data-row";
+import { Chip } from "@/components/ui/chip";
+import { AvatarChip } from "@/components/ui/avatar-chip";
+import { ListGroupHeader } from "@/components/ui/list-group-header";
 import { EmptyState } from "@/components/common/empty-state";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { SearchInput } from "@/components/ui/search-input";
@@ -11,8 +13,12 @@ import { CubeIcon, ArrowUpIcon, ArrowDownIcon } from "@radix-ui/react-icons";
 import type { AgentToken } from "@/lib/api";
 
 type StatusFilter = "all" | "active" | "revoked";
-type SortKey = "activity" | "created";
 type SortDir = "desc" | "asc";
+
+const GROUPS: { key: "active" | "revoked"; label: string; dot: string }[] = [
+  { key: "active", label: "Active", dot: "bg-status-allow" },
+  { key: "revoked", label: "Revoked", dot: "bg-faint-foreground" },
+];
 
 function timeAgo(iso: string): string {
   const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
@@ -34,8 +40,8 @@ export function AgentsTable({
   const [status, setStatus] = useState<StatusFilter>("all");
   const [type, setType] = useState<string>("all");
   const [search, setSearch] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey>("activity");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ active: true, revoked: true });
 
   const types = useMemo(() => {
     const set = new Set<string>();
@@ -53,30 +59,42 @@ export function AgentsTable({
       return true;
     });
     return [...rows].sort((a, b) => {
-      const av =
-        sortKey === "activity"
-          ? new Date(lastActivityByLabel.get(a.label) ?? a.created_at).getTime()
-          : new Date(a.created_at).getTime();
-      const bv =
-        sortKey === "activity"
-          ? new Date(lastActivityByLabel.get(b.label) ?? b.created_at).getTime()
-          : new Date(b.created_at).getTime();
+      const av = new Date(lastActivityByLabel.get(a.label) ?? a.created_at).getTime();
+      const bv = new Date(lastActivityByLabel.get(b.label) ?? b.created_at).getTime();
       return sortDir === "asc" ? av - bv : bv - av;
     });
-  }, [tokens, status, type, search, sortKey, sortDir, lastActivityByLabel]);
+  }, [tokens, status, type, search, sortDir, lastActivityByLabel]);
 
-  function toggleSort(key: SortKey) {
-    if (sortKey === key) {
-      setSortDir((d) => (d === "desc" ? "asc" : "desc"));
-    } else {
-      setSortKey(key);
-      setSortDir("desc");
-    }
-  }
+  const grouped = status === "all";
 
-  function sortIcon(active: boolean) {
-    if (!active) return null;
-    return sortDir === "desc" ? <ArrowDownIcon className="size-3" /> : <ArrowUpIcon className="size-3" />;
+  function renderRow(t: AgentToken) {
+    const lastActivity = lastActivityByLabel.get(t.label);
+    return (
+      <DataRow
+        key={t.id}
+        icon={<CubeIcon className="size-[14px]" />}
+        trailing={
+          <>
+            <Chip label={t.agent_type} />
+            {!grouped && (
+              <span className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+                <span className={`size-1.5 rounded-full ${t.revoked_at ? "bg-faint-foreground" : "bg-status-allow"}`} />
+                {t.revoked_at ? "Revoked" : "Active"}
+              </span>
+            )}
+            <AvatarChip label={t.label} />
+            <span className="w-20 shrink-0 text-right text-[12px] text-muted-foreground">
+              {lastActivity ? timeAgo(lastActivity) : "No activity"}
+            </span>
+          </>
+        }
+      >
+        <p className="truncate text-[13px] font-medium text-foreground">{t.label}</p>
+        <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
+          Created {new Date(t.created_at).toLocaleDateString()}
+        </p>
+      </DataRow>
+    );
   }
 
   if (tokens.length === 0) {
@@ -112,71 +130,42 @@ export function AgentsTable({
             </SelectContent>
           </Select>
         )}
+        <button
+          type="button"
+          onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
+          className="ml-auto flex items-center gap-1 text-[12.5px] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          {sortDir === "desc" ? "Newest activity" : "Oldest activity"}
+          {sortDir === "desc" ? <ArrowDownIcon className="size-3" /> : <ArrowUpIcon className="size-3" />}
+        </button>
       </FilterBar>
 
       {filtered.length === 0 ? (
         <div className="p-2">
           <EmptyState icon={CubeIcon} title="No matching agents" description="Try clearing a filter or search term." />
         </div>
+      ) : grouped ? (
+        <div>
+          {GROUPS.map((g) => {
+            const rows = filtered.filter((t) => (g.key === "active" ? !t.revoked_at : !!t.revoked_at));
+            if (rows.length === 0) return null;
+            const open = openGroups[g.key];
+            return (
+              <div key={g.key}>
+                <ListGroupHeader
+                  label={g.label}
+                  count={rows.length}
+                  dotColor={g.dot}
+                  open={open}
+                  onToggle={() => setOpenGroups((s) => ({ ...s, [g.key]: !s[g.key] }))}
+                />
+                {open && <div className="divide-y divide-border">{rows.map(renderRow)}</div>}
+              </div>
+            );
+          })}
+        </div>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Label</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>
-                <button
-                  type="button"
-                  onClick={() => toggleSort("activity")}
-                  className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  Last activity
-                  {sortIcon(sortKey === "activity")}
-                </button>
-              </TableHead>
-              <TableHead className="text-right">
-                <button
-                  type="button"
-                  onClick={() => toggleSort("created")}
-                  className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground ml-auto"
-                >
-                  Created
-                  {sortIcon(sortKey === "created")}
-                </button>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.map((t) => {
-              const lastActivity = lastActivityByLabel.get(t.label);
-              return (
-                <TableRow key={t.id}>
-                  <TableCell className="font-medium text-foreground">{t.label}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className="font-normal">
-                      {t.agent_type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <span className="flex items-center gap-1.5">
-                      <span
-                        className={`size-1.5 rounded-full ${t.revoked_at ? "bg-faint-foreground" : "bg-status-allow"}`}
-                      />
-                      {t.revoked_at ? "Revoked" : "Active"}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {lastActivity ? timeAgo(lastActivity) : "No activity yet"}
-                  </TableCell>
-                  <TableCell className="text-right text-muted-foreground">
-                    {new Date(t.created_at).toLocaleDateString()}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+        <div className="divide-y divide-border">{filtered.map(renderRow)}</div>
       )}
     </>
   );
