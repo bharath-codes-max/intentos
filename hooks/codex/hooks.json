@@ -1,0 +1,61 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'INTENTOS_TOKEN=YOUR_AGENT_TOKEN_HERE INTENTOS_API_URL=http://localhost:4000 node /Users/bharathkumar/Music/intentos-live/hooks/intentos-hook.mjs codex'",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'INTENTOS_TOKEN=YOUR_AGENT_TOKEN_HERE INTENTOS_API_URL=http://localhost:4000 node /Users/bharathkumar/Music/intentos-live/hooks/intentos-hook.mjs codex'",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'INTENTOS_TOKEN=YOUR_AGENT_TOKEN_HERE INTENTOS_API_URL=http://localhost:4000 node /Users/bharathkumar/Music/intentos-live/hooks/intentos-hook.mjs codex'",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'INTENTOS_TOKEN=YOUR_AGENT_TOKEN_HERE INTENTOS_API_URL=http://localhost:4000 node /Users/bharathkumar/Music/intentos-live/hooks/intentos-hook.mjs codex'",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh -c 'INTENTOS_TOKEN=YOUR_AGENT_TOKEN_HERE INTENTOS_API_URL=http://localhost:4000 node /Users/bharathkumar/Music/intentos-live/hooks/intentos-hook.mjs codex'",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

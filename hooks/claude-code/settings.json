@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/bharathkumar/Music/intentos-live/hooks/intentos-hook.mjs claude-code"
+          }
+        ]
+      }
+    ]
+  }
+}

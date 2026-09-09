@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "preToolUse": [
+      {
+        "type": "command",
+        "command": "node /Users/bharathkumar/Music/intentos-live/hooks/intentos-hook.mjs github-copilot"
+      }
+    ]
+  }
+}

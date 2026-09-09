@@ -1,0 +1,22 @@
+# dependencies / build output
+node_modules
+dist
+.next/
+out/
+build
+.turbo
+
+# secrets — never commit real tokens/keys
+.env
+.env.*
+!.env.example
+
+# disposable Codex test scaffolding — not product code, carries live tokens inline
+test-desktop-repo/
+test-finzo-repo/
+
+# misc
+.DS_Store
+*.pem
+*.tsbuildinfo
+npm-debug.log*

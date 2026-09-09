@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "command": "node /Users/bharathkumar/Music/intentos-live/hooks/intentos-hook.mjs cursor",
+        "matcher": "Shell|Read|Write|Delete|MCP:.*",
+        "timeout": 10
+      }
+    ]
+  }
+}
