@@ -1,21 +1,8 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/ui/page-header";
-import { EmptyState } from "@/components/common/empty-state";
 import { listTokens, listDecisions } from "@/lib/api";
 import { getCurrentOrgId } from "@/lib/current-org";
 import { NewTokenDialog } from "./new-token-dialog";
-import { CubeIcon } from "@radix-ui/react-icons";
-
-function timeAgo(iso: string): string {
-  const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
-}
+import { AgentsTable } from "./agents-table";
 
 export default async function AgentsPage({
   searchParams,
@@ -47,50 +34,7 @@ export default async function AgentsPage({
       />
 
       <div className="rounded-lg border border-border bg-panel">
-        {tokens.length === 0 ? (
-          <EmptyState icon={CubeIcon} title="No agents registered yet" description="Register one to get a token." />
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Label</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Last activity</TableHead>
-                <TableHead className="text-right">Created</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tokens.map((t) => {
-                const lastActivity = lastActivityByLabel.get(t.label);
-                return (
-                  <TableRow key={t.id}>
-                    <TableCell className="font-medium text-foreground">{t.label}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="font-normal">
-                        {t.agent_type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <span className="flex items-center gap-1.5">
-                        <span
-                          className={`size-1.5 rounded-full ${t.revoked_at ? "bg-faint-foreground" : "bg-status-allow"}`}
-                        />
-                        {t.revoked_at ? "Revoked" : "Active"}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {lastActivity ? timeAgo(lastActivity) : "No activity yet"}
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {new Date(t.created_at).toLocaleDateString()}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        )}
+        <AgentsTable tokens={tokens} lastActivityByLabel={lastActivityByLabel} />
       </div>
     </div>
   );

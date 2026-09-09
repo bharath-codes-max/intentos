@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { VerdictBadge } from "@/components/verdict-badge";
@@ -8,8 +8,14 @@ import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerBody } from "@/
 import { Code, CodeBlock } from "@/components/ui/code";
 import { ToolIcon } from "@/components/tool-icon";
 import { EmptyState } from "@/components/common/empty-state";
-import { MixIcon, ExternalLinkIcon } from "@radix-ui/react-icons";
+import { FilterBar } from "@/components/ui/filter-bar";
+import { SearchInput } from "@/components/ui/search-input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MixIcon, ExternalLinkIcon, ArrowUpIcon, ArrowDownIcon } from "@radix-ui/react-icons";
 import type { Decision } from "@/lib/api";
+
+type DecisionFilter = "all" | "allow" | "review" | "block";
+type SortDir = "desc" | "asc";
 
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleString(undefined, {
@@ -29,6 +35,35 @@ function summarizeInput(input: Record<string, unknown>): string {
 
 export function DecisionsTable({ decisions }: { decisions: Decision[] }) {
   const [selected, setSelected] = useState<Decision | null>(null);
+  const [decisionFilter, setDecisionFilter] = useState<DecisionFilter>("all");
+  const [agentFilter, setAgentFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  const agents = useMemo(() => {
+    const set = new Set<string>();
+    for (const d of decisions) if (d.agent_label) set.add(d.agent_label);
+    return [...set].sort();
+  }, [decisions]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const rows = decisions.filter((d) => {
+      if (decisionFilter !== "all" && d.decision !== decisionFilter) return false;
+      if (agentFilter !== "all" && d.agent_label !== agentFilter) return false;
+      if (!q) return true;
+      return (
+        d.tool_name.toLowerCase().includes(q) ||
+        d.reason.toLowerCase().includes(q) ||
+        (d.matched_rule ?? "").toLowerCase().includes(q) ||
+        JSON.stringify(d.tool_input).toLowerCase().includes(q)
+      );
+    });
+    return [...rows].sort((a, b) => {
+      const diff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      return sortDir === "asc" ? diff : -diff;
+    });
+  }, [decisions, decisionFilter, agentFilter, search, sortDir]);
 
   if (decisions.length === 0) {
     return (
@@ -40,10 +75,58 @@ export function DecisionsTable({ decisions }: { decisions: Decision[] }) {
 
   return (
     <>
+      <FilterBar resultCount={filtered.length} totalCount={decisions.length}>
+        <SearchInput value={search} onChange={setSearch} placeholder="Search tool, reason, rule…" className="w-56" />
+        <Select value={decisionFilter} onValueChange={(v) => setDecisionFilter(v as DecisionFilter)}>
+          <SelectTrigger size="sm">
+            <SelectValue>{decisionFilter === "all" ? "All decisions" : decisionFilter}</SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All decisions</SelectItem>
+            <SelectItem value="allow">Allow</SelectItem>
+            <SelectItem value="review">Review</SelectItem>
+            <SelectItem value="block">Block</SelectItem>
+          </SelectContent>
+        </Select>
+        {agents.length > 0 && (
+          <Select value={agentFilter} onValueChange={setAgentFilter}>
+            <SelectTrigger size="sm">
+              <SelectValue>{agentFilter === "all" ? "All agents" : agentFilter}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All agents</SelectItem>
+              {agents.map((a) => (
+                <SelectItem key={a} value={a}>
+                  {a}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </FilterBar>
+
+      {filtered.length === 0 ? (
+        <div className="p-2">
+          <EmptyState icon={MixIcon} title="No matching decisions" description="Try clearing a filter or search term." />
+        </div>
+      ) : (
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Time</TableHead>
+            <TableHead>
+              <button
+                type="button"
+                onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
+                className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Time
+                {sortDir === "desc" ? (
+                  <ArrowDownIcon className="size-3" />
+                ) : (
+                  <ArrowUpIcon className="size-3" />
+                )}
+              </button>
+            </TableHead>
             <TableHead>Agent</TableHead>
             <TableHead>Tool</TableHead>
             <TableHead>Action</TableHead>
@@ -53,7 +136,7 @@ export function DecisionsTable({ decisions }: { decisions: Decision[] }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {decisions.map((d) => (
+          {filtered.map((d) => (
             <TableRow key={d.id} className="cursor-pointer" onClick={() => setSelected(d)}>
               <TableCell className="text-muted-foreground">{formatTime(d.created_at)}</TableCell>
               <TableCell className="text-foreground">{d.agent_label ?? "—"}</TableCell>
@@ -79,6 +162,7 @@ export function DecisionsTable({ decisions }: { decisions: Decision[] }) {
           ))}
         </TableBody>
       </Table>
+      )}
 
       <Drawer open={selected !== null} onOpenChange={(open) => !open && setSelected(null)}>
         <DrawerContent>
