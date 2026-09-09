@@ -18,7 +18,25 @@ const app = Fastify({
   },
 });
 
-await app.register(cors, { origin: true });
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://intentos-ecru.vercel.app",
+];
+
+await app.register(cors, {
+  origin: (origin, cb) => {
+    // No Origin header (curl, server-to-server, Codex hooks) — not a browser CORS request.
+    if (!origin) return cb(null, true);
+    if (allowedOrigins.includes(origin)) return cb(null, true);
+    try {
+      // Vercel preview deployments (project-git-branch-*.vercel.app).
+      if (new URL(origin).hostname.endsWith(".vercel.app")) return cb(null, true);
+    } catch {
+      // fall through to reject
+    }
+    cb(new Error("Not allowed by CORS"), false);
+  },
+});
 await app.register(checkRoute);
 await app.register(orgsRoutes);
 await app.register(tokensRoutes);

@@ -1,8 +1,18 @@
 import "server-only";
 
-const BASE_URL = process.env.API_BASE_URL!;
-const ADMIN_KEY = process.env.ADMIN_API_KEY!;
-export const DEFAULT_ORG_ID = process.env.DEFAULT_ORG_ID!;
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(
+      `Missing required environment variable "${name}". Set it in your deployment's environment configuration (in Vercel: Project Settings → Environment Variables) and redeploy.`
+    );
+  }
+  return value;
+}
+
+const BASE_URL = requireEnv("API_BASE_URL");
+const ADMIN_KEY = requireEnv("ADMIN_API_KEY");
+export const DEFAULT_ORG_ID = requireEnv("DEFAULT_ORG_ID");
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
