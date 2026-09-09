@@ -153,7 +153,10 @@ function StatCard({
   icon: ComponentType<{ className?: string }>;
 }) {
   return (
-    <div className="rounded-2xl px-4 py-3.5" style={{ background: STAT_COLORS[tone] }}>
+    <div
+      className="rounded-2xl px-4 py-3.5 transition-transform duration-200 ease-out will-change-transform hover:-translate-y-1 hover:shadow-[0_12px_28px_rgba(0,0,0,0.35)]"
+      style={{ background: STAT_COLORS[tone] }}
+    >
       <Icon className="size-4 text-black/60" />
       <p className="mt-3 text-[30px] font-bold tabular-nums leading-none tracking-tight text-black">
         {value}

@@ -4,9 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { NAV, UTILITY } from "./nav-items";
-
-const ALL_ITEMS = [...NAV, ...UTILITY];
+import { ALL_NAV } from "./nav-items";
 
 export function NavSearch() {
   const [open, setOpen] = useState(false);
@@ -31,8 +29,8 @@ export function NavSearch() {
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return ALL_ITEMS;
-    return ALL_ITEMS.filter((item) => item.label.toLowerCase().includes(q));
+    if (!q) return ALL_NAV;
+    return ALL_NAV.filter((item) => item.label.toLowerCase().includes(q));
   }, [query]);
 
   function go(href: string) {
