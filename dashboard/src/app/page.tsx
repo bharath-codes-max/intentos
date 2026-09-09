@@ -6,7 +6,16 @@ import { decisionSummary, listDecisions, listApprovals, listTokens } from "@/lib
 import { getCurrentOrgId } from "@/lib/current-org";
 import { LiveRefresh } from "@/components/live-refresh";
 import { PageHeader } from "@/components/ui/page-header";
-import { MixIcon, ArrowRightIcon } from "@radix-ui/react-icons";
+import {
+  MixIcon,
+  ArrowRightIcon,
+  CubeIcon,
+  ActivityLogIcon,
+  CheckCircledIcon,
+  ExclamationTriangleIcon,
+  CrossCircledIcon,
+} from "@radix-ui/react-icons";
+import type { ComponentType } from "react";
 
 function timeAgo(iso: string): string {
   const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
@@ -44,11 +53,11 @@ export default async function OverviewPage() {
       />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <StatCard label="Agents connected" value={activeAgents} />
-        <StatCard label="Total checks" value={total} />
-        <StatCard label="Allowed" value={allow} />
-        <StatCard label="Needs review" value={review} />
-        <StatCard label="Blocked" value={block} />
+        <StatCard label="Agents connected" value={activeAgents} tone="purple" icon={CubeIcon} />
+        <StatCard label="Total checks" value={total} tone="blue" icon={ActivityLogIcon} />
+        <StatCard label="Allowed" value={allow} tone="green" icon={CheckCircledIcon} />
+        <StatCard label="Needs review" value={review} tone="yellow" icon={ExclamationTriangleIcon} />
+        <StatCard label="Blocked" value={block} tone="orange" icon={CrossCircledIcon} />
       </div>
 
       {total > 0 && (
@@ -124,13 +133,32 @@ export default async function OverviewPage() {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: number }) {
+const STAT_COLORS = {
+  yellow: "#F2C438",
+  orange: "#EE9A5C",
+  green: "#A9D66B",
+  purple: "#B39CE8",
+  blue: "#7FC6EC",
+} as const;
+
+function StatCard({
+  label,
+  value,
+  tone,
+  icon: Icon,
+}: {
+  label: string;
+  value: number;
+  tone: keyof typeof STAT_COLORS;
+  icon: ComponentType<{ className?: string }>;
+}) {
   return (
-    <div className="rounded-2xl bg-panel px-5 py-4">
-      <p className="text-[13px] text-muted-foreground">{label}</p>
-      <p className="mt-2 text-[32px] font-semibold tabular-nums leading-none tracking-tight text-foreground">
+    <div className="rounded-2xl px-4 py-3.5" style={{ background: STAT_COLORS[tone] }}>
+      <Icon className="size-4 text-black/60" />
+      <p className="mt-3 text-[30px] font-bold tabular-nums leading-none tracking-tight text-black">
         {value}
       </p>
+      <p className="mt-1.5 text-[12.5px] font-medium text-black/65">{label}</p>
     </div>
   );
 }

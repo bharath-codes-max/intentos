@@ -22,7 +22,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "flex h-full shrink-0 flex-col border-r border-white/[0.08] bg-sidebar shadow-[6px_0_24px_rgba(0,0,0,0.4)] transition-[width] duration-150",
+        "flex h-full shrink-0 flex-col border-r border-white/[0.08] bg-sidebar shadow-[10px_0_36px_rgba(0,0,0,0.65)] transition-[width] duration-150",
         collapsed ? "w-[68px]" : "w-[260px]"
       )}
     >
