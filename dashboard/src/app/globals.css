@@ -109,7 +109,7 @@
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--foreground);
-  --sidebar-accent: #191a1b;
+  --sidebar-accent: rgba(255, 255, 255, 0.055);
   --sidebar-accent-foreground: var(--foreground);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
