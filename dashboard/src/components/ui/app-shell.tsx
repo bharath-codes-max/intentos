@@ -17,7 +17,7 @@ export function AppShell({
     <div className="flex h-full min-h-full">
       <Sidebar orgs={orgs} currentOrgId={currentOrgId} />
       <main className="min-w-0 flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-[1200px] px-8 py-7">{children}</div>
+        <div className="w-full px-8 py-7">{children}</div>
       </main>
       <Toaster />
     </div>

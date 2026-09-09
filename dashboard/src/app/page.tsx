@@ -43,23 +43,21 @@ export default async function OverviewPage() {
         actions={<LiveRefresh />}
       />
 
-      {/* Compact operational strip — not KPI cards */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-lg border border-border bg-panel px-4 py-3 text-[13px]">
-        <Stat label="Agents connected" value={activeAgents} />
-        <div className="h-4 w-px bg-border" />
-        <Stat label="Total checks" value={total} />
-        <div className="h-4 w-px bg-border" />
-        <Stat label="Allowed" value={allow} dotClassName="bg-status-allow" />
-        <Stat label="Needs review" value={review} dotClassName="bg-status-review" />
-        <Stat label="Blocked" value={block} dotClassName="bg-status-block" />
-        {total > 0 && (
-          <div className="ml-auto flex h-1.5 w-40 overflow-hidden rounded-full bg-white/[0.06]">
-            <div className="h-full bg-status-allow" style={{ width: `${pct(allow)}%` }} />
-            <div className="h-full bg-status-review" style={{ width: `${pct(review)}%` }} />
-            <div className="h-full bg-status-block" style={{ width: `${pct(block)}%` }} />
-          </div>
-        )}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <StatCard label="Agents connected" value={activeAgents} />
+        <StatCard label="Total checks" value={total} />
+        <StatCard label="Allowed" value={allow} tone="allow" />
+        <StatCard label="Needs review" value={review} tone="review" />
+        <StatCard label="Blocked" value={block} tone="block" />
       </div>
+
+      {total > 0 && (
+        <div className="flex h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+          <div className="h-full bg-status-allow" style={{ width: `${pct(allow)}%` }} />
+          <div className="h-full bg-status-review" style={{ width: `${pct(review)}%` }} />
+          <div className="h-full bg-status-block" style={{ width: `${pct(block)}%` }} />
+        </div>
+      )}
 
       {approvals.length > 0 && (
         <div className="rounded-lg border border-[color-mix(in_oklch,var(--status-review),transparent_60%)] bg-[var(--status-review-bg)] px-4 py-3">
@@ -123,12 +121,28 @@ export default async function OverviewPage() {
   );
 }
 
-function Stat({ label, value, dotClassName }: { label: string; value: number; dotClassName?: string }) {
+function StatCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone?: "allow" | "review" | "block";
+}) {
+  const styles =
+    tone === "allow"
+      ? { bg: "bg-[var(--status-allow-bg)]", border: "border-[color-mix(in_oklch,var(--status-allow),transparent_65%)]", text: "text-status-allow" }
+      : tone === "review"
+        ? { bg: "bg-[var(--status-review-bg)]", border: "border-[color-mix(in_oklch,var(--status-review),transparent_65%)]", text: "text-status-review" }
+        : tone === "block"
+          ? { bg: "bg-[var(--status-block-bg)]", border: "border-[color-mix(in_oklch,var(--status-block),transparent_65%)]", text: "text-status-block" }
+          : { bg: "bg-panel", border: "border-border", text: "text-foreground" };
+
   return (
-    <div className="flex items-center gap-1.5">
-      {dotClassName && <span className={`size-1.5 rounded-full ${dotClassName}`} />}
-      <span className="font-medium tabular-nums text-foreground">{value}</span>
-      <span className="text-muted-foreground">{label}</span>
+    <div className={`rounded-lg border px-3.5 py-3 ${styles.bg} ${styles.border}`}>
+      <p className={`text-[22px] font-semibold tabular-nums leading-none ${styles.text}`}>{value}</p>
+      <p className="mt-1.5 text-[12px] text-muted-foreground">{label}</p>
     </div>
   );
 }
