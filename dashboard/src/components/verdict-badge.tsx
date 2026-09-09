@@ -13,12 +13,12 @@ export function VerdictBadge({ verdict }: { verdict: string }) {
   return (
     <span
       className={cn(
-        "inline-flex h-5 items-center gap-1.5 rounded px-1.5 text-[11px] font-medium uppercase tracking-wide",
+        "inline-flex h-5 min-w-16 items-center justify-center gap-1.5 rounded px-2 text-[11px] leading-none font-medium tracking-wide uppercase",
         style.bg,
         style.fg
       )}
     >
-      <span className={cn("size-1.5 rounded-full", style.fg.replace("text-", "bg-"))} />
+      <span className={cn("size-1.5 shrink-0 rounded-full", style.fg.replace("text-", "bg-"))} />
       {verdict}
     </span>
   );
@@ -41,7 +41,7 @@ export function ExecutionStatusBadge({ status }: { status: string }) {
   return (
     <span
       className={cn(
-        "inline-flex h-5 items-center rounded border px-1.5 text-[11px] font-medium tracking-wide",
+        "inline-flex h-5 min-w-16 items-center justify-center rounded border px-2 text-[11px] leading-none font-medium tracking-wide uppercase",
         EXECUTION_STYLES[key] ?? "text-muted-foreground border-border"
       )}
     >
