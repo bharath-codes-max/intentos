@@ -14,6 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Org } from "@/lib/api";
 import { OrgSwitcher } from "./org-switcher";
+import { Logo } from "./logo";
 
 const NAV = [
   { href: "/", label: "Overview", icon: LayoutGrid },
@@ -35,9 +36,7 @@ export function Sidebar({ orgs, currentOrgId }: { orgs: Org[]; currentOrgId: str
     <aside className="flex h-full w-[220px] shrink-0 flex-col border-r border-border bg-sidebar">
       <div className="flex h-12 items-center gap-2 px-3">
         <Link href="/" className="flex items-center gap-2">
-          <span className="flex size-5 items-center justify-center rounded bg-primary text-[11px] font-semibold text-primary-foreground">
-            I
-          </span>
+          <Logo size={20} />
           <span className="text-[13px] font-medium tracking-tight text-foreground">Intentos</span>
         </Link>
       </div>
