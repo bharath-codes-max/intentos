@@ -10,6 +10,7 @@ import { FilterBar } from "@/components/ui/filter-bar";
 import { SearchInput } from "@/components/ui/search-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ActivityLogIcon, ChevronRightIcon, ArrowUpIcon, ArrowDownIcon } from "@radix-ui/react-icons";
+import { colorFor } from "@/lib/color-hash";
 import type { AgentRun } from "@/lib/api";
 
 type StatusFilter = "all" | "running" | "completed" | "failed" | "cancelled";
@@ -77,6 +78,7 @@ export function ActivityList({ runs }: { runs: AgentRun[] }) {
         key={run.id}
         href={`/activity/${run.id}`}
         icon={<ActivityLogIcon className="size-[14px]" />}
+        iconColor={colorFor(run.agent_label ?? run.provider)}
         trailing={
           <>
             <Chip label={`${run.activity_count} actions`} />

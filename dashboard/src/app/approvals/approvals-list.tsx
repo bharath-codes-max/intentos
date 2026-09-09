@@ -14,6 +14,7 @@ import { AvatarChip } from "@/components/ui/avatar-chip";
 import { ExecutionStatusBadge } from "@/components/verdict-badge";
 import { ListGroupHeader } from "@/components/ui/list-group-header";
 import { CheckCircledIcon, ArrowUpIcon, ArrowDownIcon, ExclamationTriangleIcon } from "@radix-ui/react-icons";
+import { colorFor } from "@/lib/color-hash";
 import type { PendingApproval, ResolvedApproval } from "@/lib/api";
 
 function summarizeInput(input: Record<string, unknown>): string {
@@ -82,7 +83,8 @@ export function PendingApprovals({ pending }: { pending: PendingApproval[] }) {
           {filtered.map((a) => (
             <DataRow
               key={a.id}
-              icon={<ExclamationTriangleIcon className="text-status-review" />}
+              icon={<ExclamationTriangleIcon />}
+              iconColor="#F2C438"
               trailing={
                 <>
                   {a.matched_rule && <Chip label={a.matched_rule} />}
@@ -138,6 +140,7 @@ export function ResolvedApprovals({ resolved }: { resolved: ResolvedApproval[] }
       <DataRow
         key={r.id}
         icon={<ToolIcon toolName={r.tool_name} />}
+        iconColor={colorFor(r.tool_name)}
         trailing={
           <>
             {!grouped && <ExecutionStatusBadge status={r.approval_status} />}

@@ -10,6 +10,7 @@ import { FilterBar } from "@/components/ui/filter-bar";
 import { SearchInput } from "@/components/ui/search-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CubeIcon, ArrowUpIcon, ArrowDownIcon } from "@radix-ui/react-icons";
+import { colorFor } from "@/lib/color-hash";
 import type { AgentToken } from "@/lib/api";
 
 type StatusFilter = "all" | "active" | "revoked";
@@ -73,6 +74,7 @@ export function AgentsTable({
       <DataRow
         key={t.id}
         icon={<CubeIcon className="size-[14px]" />}
+        iconColor={colorFor(t.label)}
         trailing={
           <>
             <Chip label={t.agent_type} />

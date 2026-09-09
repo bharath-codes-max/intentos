@@ -6,6 +6,7 @@ import { VerdictBadge, ExecutionStatusBadge } from "@/components/verdict-badge";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerBody } from "@/components/ui/drawer";
 import { Code, CodeBlock } from "@/components/ui/code";
 import { ToolIcon } from "@/components/tool-icon";
+import { colorFor } from "@/lib/color-hash";
 import { DataRow } from "@/components/ui/data-row";
 import { Chip } from "@/components/ui/chip";
 import { AvatarChip } from "@/components/ui/avatar-chip";
@@ -90,6 +91,7 @@ export function DecisionsTable({ decisions }: { decisions: Decision[] }) {
       <DataRow
         key={d.id}
         icon={<ToolIcon toolName={d.tool_name} />}
+        iconColor={colorFor(d.tool_name)}
         onClick={() => setSelected(d)}
         trailing={
           <>

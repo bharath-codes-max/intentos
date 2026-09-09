@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 export function DataRow({
   icon,
   iconTone = "default",
+  iconColor,
   children,
   trailing,
   href,
@@ -19,6 +20,8 @@ export function DataRow({
 }: {
   icon?: ReactNode;
   iconTone?: "default" | "allow" | "review" | "block";
+  /** When set, renders the icon on a solid colored square with a black icon — the "all icons colored" treatment. */
+  iconColor?: string;
   children: ReactNode;
   trailing?: ReactNode;
   href?: string;
@@ -43,7 +46,13 @@ export function DataRow({
   const content = (
     <>
       {icon && (
-        <span className={cn("flex size-5 shrink-0 items-center justify-center rounded-md bg-white/[0.05]", toneClass)}>
+        <span
+          className={cn(
+            "flex size-5 shrink-0 items-center justify-center rounded-md",
+            iconColor ? "[&_svg]:!text-black" : cn("bg-white/[0.05]", toneClass)
+          )}
+          style={iconColor ? { background: iconColor } : undefined}
+        >
           {icon}
         </span>
       )}

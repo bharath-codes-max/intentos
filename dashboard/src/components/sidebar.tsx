@@ -83,11 +83,11 @@ export function Sidebar() {
     >
       <div className={cn("flex h-16 items-center gap-2", collapsed ? "justify-center px-2" : "px-6")}>
         <Link href="/" className="flex shrink-0 items-center">
-          <Logo size={19} />
+          <Logo size={24} />
         </Link>
         {!collapsed && (
           <>
-            <span className="shrink-0 text-[15px] font-bold tracking-tight text-foreground">Intentos</span>
+            <span className="shrink-0 text-[18px] font-bold tracking-tight text-foreground">Intentos</span>
             <NavSearch />
           </>
         )}

@@ -2,10 +2,19 @@ import Link from "next/link";
 import { ArrowLeftIcon } from "@radix-ui/react-icons";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { MetricCard } from "@/components/ui/metric-card";
 import { VerdictBadge, ExecutionStatusBadge } from "@/components/verdict-badge";
 import { ToolIcon } from "@/components/tool-icon";
 import { DataRow } from "@/components/ui/data-row";
 import { getRun } from "@/lib/api";
+import { colorFor } from "@/lib/color-hash";
+import {
+  ActivityLogIcon,
+  CheckCircledIcon,
+  ExclamationTriangleIcon,
+  CrossCircledIcon,
+  Cross2Icon,
+} from "@radix-ui/react-icons";
 
 const STATUS_LABEL: Record<string, string> = {
   running: "Running",
@@ -56,15 +65,13 @@ export default async function RunDetailPage({ params }: { params: Promise<{ id: 
         </Badge>
       </div>
 
-      <Card>
-        <CardContent className="grid grid-cols-2 gap-4 pt-6 sm:grid-cols-5">
-          <Summary label="Activities" value={run.activity_count} />
-          <Summary label="Allowed" value={run.allow_count} tone="allow" />
-          <Summary label="Review" value={run.review_count} tone="review" />
-          <Summary label="Blocked" value={run.block_count} tone="block" />
-          <Summary label="Errors" value={run.error_count || failedCount} tone={run.error_count || failedCount ? "block" : undefined} />
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        <MetricCard label="Activities" value={run.activity_count} iconColor="#7FC6EC" icon={ActivityLogIcon} />
+        <MetricCard label="Allowed" value={run.allow_count} iconColor="#A9D66B" icon={CheckCircledIcon} />
+        <MetricCard label="Review" value={run.review_count} iconColor="#F2C438" icon={ExclamationTriangleIcon} />
+        <MetricCard label="Blocked" value={run.block_count} iconColor="#EE9A5C" icon={CrossCircledIcon} />
+        <MetricCard label="Errors" value={run.error_count || failedCount} iconColor="#F2789F" icon={Cross2Icon} />
+      </div>
 
       {Object.keys(categoryCounts).length > 0 && (
         <Card>
@@ -96,6 +103,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ id: 
                 <DataRow
                   key={e.id}
                   icon={<ToolIcon toolName={e.tool ?? ""} />}
+                  iconColor={colorFor(e.tool ?? e.category)}
                   className="px-0"
                   trailing={
                     <>
@@ -147,16 +155,6 @@ export default async function RunDetailPage({ params }: { params: Promise<{ id: 
           )}
         </CardContent>
       </Card>
-    </div>
-  );
-}
-
-function Summary({ label, value, tone }: { label: string; value: number; tone?: "allow" | "review" | "block" }) {
-  const toneClass = tone === "allow" ? "text-status-allow" : tone === "review" ? "text-status-review" : tone === "block" ? "text-status-block" : "text-foreground";
-  return (
-    <div>
-      <p className={`text-[20px] font-semibold tabular-nums ${toneClass}`}>{value}</p>
-      <p className="text-[12px] text-muted-foreground">{label}</p>
     </div>
   );
 }

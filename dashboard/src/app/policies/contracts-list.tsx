@@ -9,6 +9,7 @@ import { FilterBar } from "@/components/ui/filter-bar";
 import { SearchInput } from "@/components/ui/search-input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState } from "@/components/common/empty-state";
+import { colorFor } from "@/lib/color-hash";
 import type { Contract } from "@/lib/api";
 
 type StatusFilter = "all" | "active" | "draft" | "archived";
@@ -62,6 +63,7 @@ export function ContractsList({ contracts }: { contracts: Contract[] }) {
       <DataRow
         key={c.id}
         icon={<FileTextIcon />}
+        iconColor={colorFor(c.name)}
         href={`/policies/${c.id}`}
         trailing={
           <>
