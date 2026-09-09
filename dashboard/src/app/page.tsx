@@ -43,7 +43,7 @@ export default async function OverviewPage() {
         actions={<LiveRefresh />}
       />
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <StatCard label="Agents connected" value={activeAgents} />
         <StatCard label="Total checks" value={total} />
         <StatCard label="Allowed" value={allow} tone="allow" />
@@ -52,7 +52,10 @@ export default async function OverviewPage() {
       </div>
 
       {total > 0 && (
-        <div className="flex h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+        <div
+          className="flex h-1 w-full overflow-hidden rounded-full bg-white/[0.05]"
+          style={{ boxShadow: "0 0 16px rgba(63,185,80,.06), 0 0 16px rgba(229,83,75,.06)" }}
+        >
           <div className="h-full bg-status-allow" style={{ width: `${pct(allow)}%` }} />
           <div className="h-full bg-status-review" style={{ width: `${pct(review)}%` }} />
           <div className="h-full bg-status-block" style={{ width: `${pct(block)}%` }} />
@@ -109,7 +112,7 @@ export default async function OverviewPage() {
                   </TableCell>
                   <TableCell className="text-foreground">{d.agent_label ?? "—"}</TableCell>
                   <TableCell className="font-mono text-[12px] text-muted-foreground">{d.tool_name}</TableCell>
-                  <TableCell className="max-w-xs truncate text-muted-foreground">{d.reason}</TableCell>
+                  <TableCell className="max-w-md truncate text-muted-foreground">{d.reason}</TableCell>
                   <TableCell className="text-right text-muted-foreground">{timeAgo(d.created_at)}</TableCell>
                 </TableRow>
               ))}
@@ -130,19 +133,37 @@ function StatCard({
   value: number;
   tone?: "allow" | "review" | "block";
 }) {
-  const styles =
+  const border =
     tone === "allow"
-      ? { bg: "bg-[var(--status-allow-bg)]", border: "border-[color-mix(in_oklch,var(--status-allow),transparent_65%)]", text: "text-status-allow" }
+      ? "color-mix(in oklch, var(--status-allow), transparent 75%)"
       : tone === "review"
-        ? { bg: "bg-[var(--status-review-bg)]", border: "border-[color-mix(in_oklch,var(--status-review),transparent_65%)]", text: "text-status-review" }
+        ? "color-mix(in oklch, var(--status-review), transparent 75%)"
         : tone === "block"
-          ? { bg: "bg-[var(--status-block-bg)]", border: "border-[color-mix(in_oklch,var(--status-block),transparent_65%)]", text: "text-status-block" }
-          : { bg: "bg-panel", border: "border-border", text: "text-foreground" };
+          ? "color-mix(in oklch, var(--status-block), transparent 75%)"
+          : "rgba(255,255,255,0.08)";
+
+  const glow =
+    tone === "allow"
+      ? "0 0 24px color-mix(in oklch, var(--status-allow), transparent 95%)"
+      : tone === "review"
+        ? "0 0 24px color-mix(in oklch, var(--status-review), transparent 95%)"
+        : tone === "block"
+          ? "0 0 24px color-mix(in oklch, var(--status-block), transparent 95%)"
+          : "none";
+
+  const text = tone ? { allow: "text-status-allow", review: "text-status-review", block: "text-status-block" }[tone] : "text-foreground";
 
   return (
-    <div className={`rounded-lg border px-3.5 py-3 ${styles.bg} ${styles.border}`}>
-      <p className={`text-[22px] font-semibold tabular-nums leading-none ${styles.text}`}>{value}</p>
-      <p className="mt-1.5 text-[12px] text-muted-foreground">{label}</p>
+    <div
+      className="rounded-xl border px-4 py-3.5"
+      style={{
+        background: "rgba(255,255,255,0.03)",
+        borderColor: border,
+        boxShadow: `inset 0 1px rgba(255,255,255,.04), 0 1px 2px rgba(0,0,0,.2), ${glow}`,
+      }}
+    >
+      <p className={`text-[26px] font-medium tabular-nums leading-none tracking-tight ${text}`}>{value}</p>
+      <p className="mt-2 text-[12.5px] text-muted-foreground">{label}</p>
     </div>
   );
 }

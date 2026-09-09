@@ -63,13 +63,13 @@ export function DecisionsTable({ decisions }: { decisions: Decision[] }) {
                   {d.tool_name}
                 </span>
               </TableCell>
-              <TableCell className="max-w-64 truncate font-mono text-[12px] text-muted-foreground">
+              <TableCell className="max-w-md truncate font-mono text-[12px] text-muted-foreground">
                 {summarizeInput(d.tool_input)}
               </TableCell>
               <TableCell>
                 <VerdictBadge verdict={d.decision} />
               </TableCell>
-              <TableCell className="max-w-56 truncate text-muted-foreground">
+              <TableCell className="max-w-xs truncate text-muted-foreground">
                 {d.matched_rule ?? "—"}
               </TableCell>
               <TableCell className="text-right text-muted-foreground">

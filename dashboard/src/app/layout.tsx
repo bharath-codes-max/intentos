@@ -27,7 +27,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
 
   return (
     <html lang="en" className={`dark ${inter.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="flex h-full min-h-full">
+      <body className="h-full min-h-full">
         <ToastProvider>
           <TooltipProvider>
             <AppShell orgs={orgs} currentOrgId={currentOrgId}>

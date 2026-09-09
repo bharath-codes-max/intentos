@@ -14,7 +14,7 @@ export function AppShell({
   children: ReactNode;
 }) {
   return (
-    <div className="flex h-full min-h-full">
+    <div className="flex h-full min-h-full w-full">
       <Sidebar orgs={orgs} currentOrgId={currentOrgId} />
       <main className="min-w-0 flex-1 overflow-y-auto">
         <div className="w-full px-8 py-7">{children}</div>
