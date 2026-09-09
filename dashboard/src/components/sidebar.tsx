@@ -34,11 +34,13 @@ export function Sidebar({ orgs, currentOrgId }: { orgs: Org[]; currentOrgId: str
 
   return (
     <aside className="flex h-full w-[220px] shrink-0 flex-col border-r border-border bg-sidebar">
-      <div className="flex h-12 items-center gap-2 px-3">
-        <Link href="/" className="flex items-center gap-2">
-          <Logo size={20} />
-          <span className="text-[13px] font-medium tracking-tight text-foreground">Intentos</span>
+      <div className="flex h-12 items-center gap-1.5 px-2.5">
+        <Link href="/" className="flex shrink-0 items-center pl-0.5">
+          <Logo size={18} />
         </Link>
+        <span className="shrink-0 text-[13px] font-semibold tracking-tight text-foreground">Intentos</span>
+        <span className="mx-0.5 shrink-0 text-faint-foreground">/</span>
+        <OrgSwitcher orgs={orgs} currentOrgId={currentOrgId} compact />
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 py-1">
@@ -88,10 +90,6 @@ export function Sidebar({ orgs, currentOrgId }: { orgs: Org[]; currentOrgId: str
           </ul>
         </div>
       </nav>
-
-      <div className="border-t border-border p-2">
-        <OrgSwitcher orgs={orgs} currentOrgId={currentOrgId} />
-      </div>
     </aside>
   );
 }
