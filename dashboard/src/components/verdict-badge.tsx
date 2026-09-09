@@ -30,6 +30,7 @@ const EXECUTION_STYLES: Record<string, string> = {
   attempted: "text-muted-foreground border-border",
   waiting_approval: "text-[var(--status-review)] border-[var(--status-review)]/30",
   executed: "text-[var(--status-allow)] border-[var(--status-allow)]/30",
+  approved: "text-[var(--status-allow)] border-[var(--status-allow)]/30",
   failed: "text-[var(--status-block)] border-[var(--status-block)]/30",
   denied: "text-[var(--status-block)] border-[var(--status-block)]/30",
   cancelled: "text-faint-foreground border-border",

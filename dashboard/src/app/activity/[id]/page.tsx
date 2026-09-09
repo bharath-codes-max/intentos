@@ -136,7 +136,11 @@ export default async function RunDetailPage({ params }: { params: Promise<{ id: 
                       )}
                     </p>
                   )}
-                  {e.error_summary && <p className="mt-1 text-[12px] text-status-block">{e.error_summary}</p>}
+                  {e.error_summary && (
+                    <p className="mt-1.5 rounded-none border border-[color-mix(in_oklch,var(--status-block),transparent_65%)] bg-[var(--status-block-bg)] px-2.5 py-1.5 font-mono text-[12px] text-status-block">
+                      {e.error_summary}
+                    </p>
+                  )}
                 </DataRow>
               ))}
             </div>

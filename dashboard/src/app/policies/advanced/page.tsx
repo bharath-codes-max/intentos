@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowLeftIcon } from "@radix-ui/react-icons";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { StatusIndicator } from "@/components/ui/status-indicator";
+import { VerdictBadge } from "@/components/verdict-badge";
 import { listPolicies } from "@/lib/api";
 import { getCurrentOrgId } from "@/lib/current-org";
 import { NewPolicyDialog } from "../new-policy-dialog";
@@ -76,7 +76,7 @@ export default async function AdvancedPoliciesPage() {
                   {p.condition ? describeCondition(p.condition) : "—"}
                 </TableCell>
                 <TableCell>
-                  <StatusIndicator status={p.action} />
+                  <VerdictBadge verdict={p.action} />
                 </TableCell>
                 <TableCell className="tabular-nums text-sm">{p.priority}</TableCell>
                 <TableCell className="text-sm">{p.active ? "Active" : "Disabled"}</TableCell>

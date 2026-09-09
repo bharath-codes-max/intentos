@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ApprovalButtons } from "./approval-buttons";
 import { Chip } from "@/components/ui/chip";
 import { AvatarChip } from "@/components/ui/avatar-chip";
+import { ExecutionStatusBadge } from "@/components/verdict-badge";
 import { ListGroupHeader } from "@/components/ui/list-group-header";
 import { CheckCircledIcon, ArrowUpIcon, ArrowDownIcon, ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import type { PendingApproval, ResolvedApproval } from "@/lib/api";
@@ -139,12 +140,7 @@ export function ResolvedApprovals({ resolved }: { resolved: ResolvedApproval[] }
         icon={<ToolIcon toolName={r.tool_name} />}
         trailing={
           <>
-            {!grouped && (
-              <Chip
-                label={r.approval_status}
-                color={r.approval_status === "approved" ? "var(--status-allow)" : "var(--status-block)"}
-              />
-            )}
+            {!grouped && <ExecutionStatusBadge status={r.approval_status} />}
             <span className="text-[12px] text-muted-foreground">{r.reviewer}</span>
             <AvatarChip label={r.reviewer} />
             <span className="w-24 shrink-0 text-right text-[12px] text-muted-foreground">

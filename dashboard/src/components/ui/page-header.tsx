@@ -19,10 +19,10 @@ export function PageHeader({
         <h1 className="flex items-center gap-2.5 text-[32px] font-bold tracking-tight text-foreground">
           {Icon && (
             <span
-              className="flex size-8 shrink-0 items-center justify-center rounded-md"
-              style={{ background: iconColor ? `color-mix(in oklch, ${iconColor}, transparent 85%)` : undefined }}
+              className="flex size-9 shrink-0 items-center justify-center rounded-lg shadow-[0_2px_8px_rgba(0,0,0,0.35)]"
+              style={{ background: iconColor }}
             >
-              <Icon className="size-[18px]" style={{ color: iconColor }} />
+              <Icon className="size-[19px] text-white" />
             </span>
           )}
           {title}

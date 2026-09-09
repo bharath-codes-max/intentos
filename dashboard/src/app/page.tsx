@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { StatusIndicator } from "@/components/ui/status-indicator";
+import { VerdictBadge, ExecutionStatusBadge } from "@/components/verdict-badge";
 import { DataRow } from "@/components/ui/data-row";
-import { AvatarChip } from "@/components/ui/avatar-chip";
 import { ToolIcon } from "@/components/tool-icon";
 import { EmptyState } from "@/components/common/empty-state";
 import { decisionSummary, listDecisions, listApprovals, listTokens } from "@/lib/api";
@@ -115,8 +114,10 @@ export default async function OverviewPage() {
                 icon={<ToolIcon toolName={d.tool_name} />}
                 trailing={
                   <>
-                    <StatusIndicator status={d.decision} />
-                    <AvatarChip label={d.agent_label} />
+                    <VerdictBadge verdict={d.decision} />
+                    <ExecutionStatusBadge
+                      status={d.approval_status ?? (d.decision === "allow" ? "executed" : "attempted")}
+                    />
                     <span className="w-16 shrink-0 text-right text-[12px] text-muted-foreground">
                       {timeAgo(d.created_at)}
                     </span>

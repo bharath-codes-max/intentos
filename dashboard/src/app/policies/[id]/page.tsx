@@ -3,7 +3,7 @@ import { ArrowLeftIcon } from "@radix-ui/react-icons";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { StatusIndicator } from "@/components/ui/status-indicator";
+import { VerdictBadge } from "@/components/verdict-badge";
 import { getContract } from "@/lib/api";
 import { ContractStatusToggle } from "./status-toggle";
 
@@ -80,7 +80,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
                   <TableCell className="font-mono text-xs">{r.resource_action ?? "—"}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">{conditionText(r.condition)}</TableCell>
                   <TableCell>
-                    <StatusIndicator status={r.action} />
+                    <VerdictBadge verdict={r.action} />
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{r.reason ?? r.rule_name}</TableCell>
                 </TableRow>
