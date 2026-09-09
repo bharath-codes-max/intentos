@@ -40,7 +40,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-[20px] font-semibold tracking-tight text-foreground">{contract.name}</h1>
+            <h1 className="text-[32px] font-bold tracking-tight text-foreground">{contract.name}</h1>
             <Badge variant={contract.status === "active" ? "default" : "secondary"} className="font-normal">
               {contract.status}
             </Badge>

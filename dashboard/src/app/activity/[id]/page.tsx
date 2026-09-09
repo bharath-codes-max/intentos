@@ -42,7 +42,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ id: 
 
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-[18px] font-semibold tracking-tight text-foreground">{run.task_summary ?? "Untitled run"}</h1>
+          <h1 className="text-[32px] font-bold tracking-tight text-foreground">{run.task_summary ?? "Untitled run"}</h1>
           {run.task_source === "captured_prompt" && (
             <p className="mt-0.5 text-[12px] text-muted-foreground">Captured from the agent&apos;s actual prompt.</p>
           )}

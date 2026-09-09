@@ -8,7 +8,7 @@ export default function SignupPage() {
   return (
     <div className="mx-auto max-w-md space-y-6 pt-16">
       <div className="text-center">
-        <h1 className="text-[20px] font-semibold tracking-tight text-foreground">Create your company</h1>
+        <h1 className="text-[32px] font-bold tracking-tight text-foreground">Create your company</h1>
         <p className="mt-1 text-[13px] text-muted-foreground">
           Every agent, policy, and decision your company logs stays scoped to this company alone.
         </p>

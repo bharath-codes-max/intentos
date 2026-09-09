@@ -44,7 +44,7 @@ export default async function AdvancedPoliciesPage() {
 
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[18px] font-semibold tracking-tight text-foreground">Advanced: manual rules</h1>
+          <h1 className="text-[32px] font-bold tracking-tight text-foreground">Advanced: manual rules</h1>
           <p className="mt-1 text-[13px] text-muted-foreground">
             Precise field/operator/value rules, for security engineers who want direct control instead
             of describing intent in English. Rules are checked in priority order — highest wins ties.
