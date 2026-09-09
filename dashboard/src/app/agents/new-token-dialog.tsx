@@ -45,7 +45,9 @@ export function NewTokenDialog() {
         if (!next) reset();
       }}
     >
-      <DialogTrigger render={<Button>Register agent</Button>} />
+      <DialogTrigger asChild>
+        <Button size="sm">Register agent</Button>
+      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Register a new agent</DialogTitle>
@@ -66,11 +68,9 @@ export function NewTokenDialog() {
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label>Agent type</Label>
-              <Select value={agentType} onValueChange={(v) => setAgentType(v ?? AGENT_TYPES[0].value)}>
+              <Select value={agentType} onValueChange={setAgentType}>
                 <SelectTrigger className="w-full">
-                  <SelectValue>
-                    {() => AGENT_TYPES.find((t) => t.value === agentType)?.label ?? agentType}
-                  </SelectValue>
+                  <SelectValue>{AGENT_TYPES.find((t) => t.value === agentType)?.label ?? agentType}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {AGENT_TYPES.map((t) => (

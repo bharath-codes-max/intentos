@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeftIcon } from "@radix-ui/react-icons";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { VerdictBadge, ExecutionStatusBadge } from "@/components/verdict-badge";
@@ -36,7 +36,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ id: 
     <div className="space-y-6">
       <div>
         <Link href="/activity" className="inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="size-3.5" /> Back to Agent Activity
+          <ArrowLeftIcon className="size-3.5" /> Back to Agent Activity
         </Link>
       </div>
 

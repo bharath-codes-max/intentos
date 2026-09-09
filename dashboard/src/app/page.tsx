@@ -6,7 +6,7 @@ import { decisionSummary, listDecisions, listApprovals, listTokens } from "@/lib
 import { getCurrentOrgId } from "@/lib/current-org";
 import { LiveRefresh } from "@/components/live-refresh";
 import { PageHeader } from "@/components/ui/page-header";
-import { ListChecks, ArrowRight } from "lucide-react";
+import { MixIcon, ArrowRightIcon } from "@radix-ui/react-icons";
 
 function timeAgo(iso: string): string {
   const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
@@ -69,7 +69,7 @@ export default async function OverviewPage() {
               href="/approvals"
               className="flex items-center gap-1 text-[12.5px] font-medium text-foreground hover:underline"
             >
-              Review <ArrowRight className="size-3" />
+              Review <ArrowRightIcon className="size-3" />
             </Link>
           </div>
         </div>
@@ -85,7 +85,7 @@ export default async function OverviewPage() {
         {decisions.length === 0 ? (
           <div className="p-2">
             <EmptyState
-              icon={ListChecks}
+              icon={MixIcon}
               title="No decisions yet"
               description="Waiting on the first agent check."
             />

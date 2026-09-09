@@ -4,7 +4,7 @@ import { DataRow } from "@/components/ui/data-row";
 import { LiveRefresh } from "@/components/live-refresh";
 import { listRuns } from "@/lib/api";
 import { getCurrentOrgId } from "@/lib/current-org";
-import { Activity, ChevronRight } from "lucide-react";
+import { ActivityLogIcon, ChevronRightIcon } from "@radix-ui/react-icons";
 
 function formatDuration(startedAt: string, endedAt: string | null): string {
   const end = endedAt ? new Date(endedAt).getTime() : Date.now();
@@ -42,7 +42,7 @@ export default async function ActivityPage() {
       <div className="rounded-lg border border-border bg-panel">
         {runs.length === 0 ? (
           <EmptyState
-            icon={Activity}
+            icon={ActivityLogIcon}
             title="No runs observed yet"
             description="Start a connected agent (Codex) in a repo wired to Intentos and its activity will appear here."
           />
@@ -62,7 +62,7 @@ export default async function ActivityPage() {
                     <span className="w-16 text-right text-[12px] text-muted-foreground">
                       {STATUS_LABEL[run.status] ?? run.status}
                     </span>
-                    <ChevronRight className="size-3.5 text-faint-foreground" />
+                    <ChevronRightIcon className="size-3.5 text-faint-foreground" />
                   </>
                 }
               >

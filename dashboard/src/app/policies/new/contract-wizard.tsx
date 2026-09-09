@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CompiledRule, CompileResult, Condition } from "@/lib/api";
 import { compileIntentAction, activateContractAction } from "./actions";
-import { Check, AlertTriangle, X, Trash2, Code2 } from "lucide-react";
+import { CheckCircledIcon, ClockIcon, CrossCircledIcon, TrashIcon, CodeIcon } from "@radix-ui/react-icons";
 
 const EXAMPLE =
   "Allow Codex to read and modify source code and run tests.\n" +
@@ -54,19 +54,19 @@ const EFFECT_META = {
     label: "ALLOWED",
     color: "text-status-allow",
     bg: "bg-[var(--status-allow-bg)] border-[color-mix(in_oklch,var(--status-allow),transparent_65%)]",
-    icon: Check,
+    icon: CheckCircledIcon,
   },
   REVIEW: {
     label: "HUMAN REVIEW",
     color: "text-status-review",
     bg: "bg-[var(--status-review-bg)] border-[color-mix(in_oklch,var(--status-review),transparent_65%)]",
-    icon: AlertTriangle,
+    icon: ClockIcon,
   },
   BLOCK: {
     label: "BLOCKED",
     color: "text-status-block",
     bg: "bg-[var(--status-block-bg)] border-[color-mix(in_oklch,var(--status-block),transparent_65%)]",
-    icon: X,
+    icon: CrossCircledIcon,
   },
 } as const;
 
@@ -137,9 +137,9 @@ export function ContractWizard({ agents }: { agents: { id: string; label: string
                 contract unassigned for now.
               </p>
             ) : (
-              <Select value={agentId} onValueChange={(v) => setAgentId(v ?? "")}>
+              <Select value={agentId} onValueChange={setAgentId}>
                 <SelectTrigger className="w-full max-w-sm">
-                  <SelectValue>{() => selectedAgent?.label ?? "Select agent"}</SelectValue>
+                  <SelectValue>{selectedAgent?.label ?? "Select agent"}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {agents.map((a) => (
@@ -201,7 +201,7 @@ export function ContractWizard({ agents }: { agents: { id: string; label: string
               {result?.note && <p className="mt-1 text-[12px] text-status-review">{result.note}</p>}
             </div>
             <Button variant="ghost" size="sm" onClick={() => setShowRaw((v) => !v)} className="gap-1.5">
-              <Code2 className="size-3.5" /> {showRaw ? "Hide" : "View"} raw JSON
+              <CodeIcon className="size-3.5" /> {showRaw ? "Hide" : "View"} raw JSON
             </Button>
           </div>
           <div className="space-y-1.5">
@@ -235,9 +235,9 @@ export function ContractWizard({ agents }: { agents: { id: string; label: string
                         {rule.resource}.{rule.resource_action} — {conditionText(rule.condition)}
                       </p>
                     </div>
-                    <Select value={rule.effect} onValueChange={(v) => v && updateRule(rule.id, { effect: v as CompiledRule["effect"] })}>
+                    <Select value={rule.effect} onValueChange={(v) => updateRule(rule.id, { effect: v as CompiledRule["effect"] })}>
                       <SelectTrigger className="w-32 shrink-0">
-                        <SelectValue>{() => rule.effect}</SelectValue>
+                        <SelectValue>{rule.effect}</SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="ALLOW">Allow</SelectItem>
@@ -246,7 +246,7 @@ export function ContractWizard({ agents }: { agents: { id: string; label: string
                       </SelectContent>
                     </Select>
                     <Button variant="ghost" size="sm" onClick={() => removeRule(rule.id)}>
-                      <Trash2 className="size-3.5" />
+                      <TrashIcon className="size-3.5" />
                     </Button>
                   </div>
                 ))}

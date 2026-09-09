@@ -2,14 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { VerdictBadge } from "@/components/verdict-badge";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerBody } from "@/components/ui/drawer";
 import { Code, CodeBlock } from "@/components/ui/code";
 import { ToolIcon } from "@/components/tool-icon";
 import { EmptyState } from "@/components/common/empty-state";
-import { ListChecks } from "lucide-react";
+import { MixIcon, ExternalLinkIcon } from "@radix-ui/react-icons";
 import type { Decision } from "@/lib/api";
 
 function formatTime(iso: string): string {
@@ -34,7 +33,7 @@ export function DecisionsTable({ decisions }: { decisions: Decision[] }) {
   if (decisions.length === 0) {
     return (
       <div className="p-2">
-        <EmptyState icon={ListChecks} title="No decisions logged yet" description="They'll appear here as agents act." />
+        <EmptyState icon={MixIcon} title="No decisions logged yet" description="They'll appear here as agents act." />
       </div>
     );
   }
@@ -118,7 +117,7 @@ export function DecisionsTable({ decisions }: { decisions: Decision[] }) {
                     href={`/activity/${selected.run_id}`}
                     className="flex items-center gap-1 text-[12.5px] font-medium text-primary hover:underline"
                   >
-                    View run <ArrowUpRight className="size-3" />
+                    View run <ExternalLinkIcon className="size-3" />
                   </Link>
                 )}
               </DrawerBody>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeftIcon } from "@radix-ui/react-icons";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -33,7 +33,7 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
     <div className="space-y-6">
       <div>
         <Link href="/policies" className="inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="size-3.5" /> Back to Intent Contracts
+          <ArrowLeftIcon className="size-3.5" /> Back to Intent Contracts
         </Link>
       </div>
 

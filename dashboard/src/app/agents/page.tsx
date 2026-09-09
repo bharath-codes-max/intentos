@@ -5,7 +5,7 @@ import { EmptyState } from "@/components/common/empty-state";
 import { listTokens, listDecisions } from "@/lib/api";
 import { getCurrentOrgId } from "@/lib/current-org";
 import { NewTokenDialog } from "./new-token-dialog";
-import { Bot } from "lucide-react";
+import { CubeIcon } from "@radix-ui/react-icons";
 
 function timeAgo(iso: string): string {
   const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
@@ -48,7 +48,7 @@ export default async function AgentsPage({
 
       <div className="rounded-lg border border-border bg-panel">
         {tokens.length === 0 ? (
-          <EmptyState icon={Bot} title="No agents registered yet" description="Register one to get a token." />
+          <EmptyState icon={CubeIcon} title="No agents registered yet" description="Register one to get a token." />
         ) : (
           <Table>
             <TableHeader>

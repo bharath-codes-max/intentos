@@ -7,7 +7,7 @@ import { listApprovals, listResolvedApprovals } from "@/lib/api";
 import { getCurrentOrgId } from "@/lib/current-org";
 import { LiveRefresh } from "@/components/live-refresh";
 import { ApprovalButtons } from "./approval-buttons";
-import { ClipboardCheck } from "lucide-react";
+import { CheckCircledIcon } from "@radix-ui/react-icons";
 
 function summarizeInput(input: Record<string, unknown>): string {
   return Object.entries(input)
@@ -39,7 +39,7 @@ export default async function ApprovalsPage() {
       {pending.length === 0 ? (
         <div className="rounded-lg border border-border bg-panel">
           <EmptyState
-            icon={ClipboardCheck}
+            icon={CheckCircledIcon}
             title="Nothing waiting on you"
             description="Actions your policies mark as REVIEW land here until a human approves or denies them."
           />

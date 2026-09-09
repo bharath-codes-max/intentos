@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Settings2 } from "lucide-react";
+import { GearIcon, FileTextIcon } from "@radix-ui/react-icons";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/common/empty-state";
 import { listContracts } from "@/lib/api";
 import { getCurrentOrgId } from "@/lib/current-org";
-import { ScrollText } from "lucide-react";
 
 export default async function PoliciesPage() {
   const contracts = await listContracts(await getCurrentOrgId());
@@ -21,7 +20,7 @@ export default async function PoliciesPage() {
           <>
             <Link href="/policies/advanced">
               <Button variant="ghost" size="sm" className="gap-1.5">
-                <Settings2 className="size-3.5" /> Advanced
+                <GearIcon className="size-3.5" /> Advanced
               </Button>
             </Link>
             <Link href="/policies/new">
@@ -34,7 +33,7 @@ export default async function PoliciesPage() {
       <div className="rounded-lg border border-border bg-panel">
         {contracts.length === 0 ? (
           <EmptyState
-            icon={ScrollText}
+            icon={FileTextIcon}
             title="No Intent Contracts yet"
             description="Describe an agent's intent in plain English to create your first one."
           />

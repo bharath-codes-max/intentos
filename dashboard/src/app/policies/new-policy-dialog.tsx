@@ -53,7 +53,9 @@ export function NewPolicyDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button>New rule</Button>} />
+      <DialogTrigger asChild>
+        <Button size="sm">New rule</Button>
+      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>New policy rule</DialogTitle>
@@ -84,9 +86,9 @@ export function NewPolicyDialog() {
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1.5">
               <Label>If field</Label>
-              <Select value={field} onValueChange={(v) => setField(v ?? FIELDS[0].value)}>
+              <Select value={field} onValueChange={setField}>
                 <SelectTrigger className="w-full">
-                  <SelectValue>{() => labelFor(FIELDS, field)}</SelectValue>
+                  <SelectValue>{labelFor(FIELDS, field)}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {FIELDS.map((f) => (
@@ -100,9 +102,9 @@ export function NewPolicyDialog() {
 
             <div className="space-y-1.5">
               <Label>Operator</Label>
-              <Select value={op} onValueChange={(v) => setOp(v ?? OPS[0].value)}>
+              <Select value={op} onValueChange={setOp}>
                 <SelectTrigger className="w-full">
-                  <SelectValue>{() => labelFor(OPS, op)}</SelectValue>
+                  <SelectValue>{labelFor(OPS, op)}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {OPS.map((o) => (
@@ -123,9 +125,9 @@ export function NewPolicyDialog() {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Then</Label>
-              <Select value={action} onValueChange={(v) => setAction(v ?? "BLOCK")}>
+              <Select value={action} onValueChange={setAction}>
                 <SelectTrigger className="w-full">
-                  <SelectValue>{() => labelFor(ACTIONS, action)}</SelectValue>
+                  <SelectValue>{labelFor(ACTIONS, action)}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {ACTIONS.map((a) => (

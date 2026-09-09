@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
-import { ChevronsUpDown, Plus } from "lucide-react";
+import { CaretSortIcon, PlusIcon } from "@radix-ui/react-icons";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,26 +29,24 @@ export function OrgSwitcher({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          compact ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 min-w-0 flex-1 justify-start gap-1 px-1.5 text-[13px] font-medium"
-              disabled={pending}
-            >
-              <span className="truncate">{current?.name ?? "Select company"}</span>
-              <ChevronsUpDown className="size-3 shrink-0 text-faint-foreground" />
-            </Button>
-          ) : (
-            <Button variant="secondary" size="sm" className="gap-1.5" disabled={pending}>
-              {current?.name ?? "Select company"}
-              <ChevronsUpDown className="size-3.5 text-muted-foreground" />
-            </Button>
-          )
-        }
-      />
+      <DropdownMenuTrigger asChild>
+        {compact ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 min-w-0 flex-1 justify-start gap-1 px-1.5 text-[13px] font-medium"
+            disabled={pending}
+          >
+            <span className="truncate">{current?.name ?? "Select company"}</span>
+            <CaretSortIcon className="size-3.5 shrink-0 text-faint-foreground" />
+          </Button>
+        ) : (
+          <Button variant="secondary" size="sm" className="gap-1.5" disabled={pending}>
+            {current?.name ?? "Select company"}
+            <CaretSortIcon className="size-3.5 text-muted-foreground" />
+          </Button>
+        )}
+      </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         {orgs.map((org) => (
           <DropdownMenuItem
@@ -60,8 +58,10 @@ export function OrgSwitcher({
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
-        <DropdownMenuItem render={<Link href="/signup" />}>
-          <Plus className="size-3.5" /> New company
+        <DropdownMenuItem asChild>
+          <Link href="/signup" className="flex items-center gap-1.5">
+            <PlusIcon className="size-[15px]" /> New company
+          </Link>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -3,29 +3,29 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutGrid,
-  Bot,
-  ScrollText,
-  ListChecks,
-  CircleCheck,
-  Activity,
-  TerminalSquare,
-} from "lucide-react";
+  DashboardIcon,
+  CubeIcon,
+  FileTextIcon,
+  MixIcon,
+  CheckCircledIcon,
+  ActivityLogIcon,
+  CodeIcon,
+} from "@radix-ui/react-icons";
 import { cn } from "@/lib/utils";
 import { Org } from "@/lib/api";
 import { OrgSwitcher } from "./org-switcher";
 import { Logo } from "./logo";
 
 const NAV = [
-  { href: "/", label: "Overview", icon: LayoutGrid },
-  { href: "/agents", label: "Agents", icon: Bot },
-  { href: "/policies", label: "Intent Contracts", icon: ScrollText },
-  { href: "/decisions", label: "Decisions", icon: ListChecks },
-  { href: "/approvals", label: "Approvals", icon: CircleCheck },
-  { href: "/activity", label: "Agent Activity", icon: Activity },
+  { href: "/", label: "Overview", icon: DashboardIcon },
+  { href: "/agents", label: "Agents", icon: CubeIcon },
+  { href: "/policies", label: "Intent Contracts", icon: FileTextIcon },
+  { href: "/decisions", label: "Decisions", icon: MixIcon },
+  { href: "/approvals", label: "Approvals", icon: CheckCircledIcon },
+  { href: "/activity", label: "Agent Activity", icon: ActivityLogIcon },
 ];
 
-const UTILITY = [{ href: "/test", label: "Test console", icon: TerminalSquare }];
+const UTILITY = [{ href: "/test", label: "Test console", icon: CodeIcon }];
 
 export function Sidebar({ orgs, currentOrgId }: { orgs: Org[]; currentOrgId: string }) {
   const pathname = usePathname();
@@ -58,7 +58,7 @@ export function Sidebar({ orgs, currentOrgId }: { orgs: Org[]; currentOrgId: str
                       : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground"
                   )}
                 >
-                  <item.icon className="size-[15px] shrink-0" strokeWidth={1.75} />
+                  <item.icon className="size-[15px] shrink-0" />
                   <span className="truncate">{item.label}</span>
                 </Link>
               </li>
@@ -81,7 +81,7 @@ export function Sidebar({ orgs, currentOrgId }: { orgs: Org[]; currentOrgId: str
                         : "text-faint-foreground hover:bg-sidebar-accent/60 hover:text-foreground"
                     )}
                   >
-                    <item.icon className="size-[15px] shrink-0" strokeWidth={1.75} />
+                    <item.icon className="size-[15px] shrink-0" />
                     <span className="truncate">{item.label}</span>
                   </Link>
                 </li>
