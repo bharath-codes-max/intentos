@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { VerdictBadge } from "@/components/verdict-badge";
+import { StatusIndicator } from "@/components/ui/status-indicator";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerBody } from "@/components/ui/drawer";
 import { Code, CodeBlock } from "@/components/ui/code";
 import { ToolIcon } from "@/components/tool-icon";
@@ -94,7 +95,7 @@ export function DecisionsTable({ decisions }: { decisions: Decision[] }) {
         trailing={
           <>
             {d.matched_rule && <Chip label={d.matched_rule} />}
-            {!grouped && <VerdictBadge verdict={d.decision} />}
+            {!grouped && <StatusIndicator status={d.decision} />}
             <AvatarChip label={d.agent_label} />
             <span className="w-16 shrink-0 text-right text-[12px] text-muted-foreground">
               {timeAgo(d.created_at)}

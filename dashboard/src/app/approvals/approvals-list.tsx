@@ -12,7 +12,7 @@ import { ApprovalButtons } from "./approval-buttons";
 import { Chip } from "@/components/ui/chip";
 import { AvatarChip } from "@/components/ui/avatar-chip";
 import { ListGroupHeader } from "@/components/ui/list-group-header";
-import { CheckCircledIcon, ArrowUpIcon, ArrowDownIcon } from "@radix-ui/react-icons";
+import { CheckCircledIcon, ArrowUpIcon, ArrowDownIcon, ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import type { PendingApproval, ResolvedApproval } from "@/lib/api";
 
 function summarizeInput(input: Record<string, unknown>): string {
@@ -77,26 +77,33 @@ export function PendingApprovals({ pending }: { pending: PendingApproval[] }) {
           <EmptyState icon={CheckCircledIcon} title="No matching approvals" description="Try clearing a filter or search term." />
         </div>
       ) : (
-        filtered.map((a) => (
-          <DataRow
-            key={a.id}
-            icon={<ToolIcon toolName={a.tool_name} className="text-status-review" />}
-            className="rounded-none border border-[color-mix(in_oklch,var(--status-review),transparent_65%)] bg-[var(--status-review-bg)] hover:bg-[var(--status-review-bg)]"
-            trailing={<ApprovalButtons id={a.id} />}
-          >
-            <p className="text-[13px] font-medium text-foreground">
-              {a.agent_label ?? "Unknown agent"}
-              <span className="text-muted-foreground"> requested </span>
-              <Code>{a.tool_name}</Code>
-            </p>
-            <p className="mt-1 truncate font-mono text-[12px] text-muted-foreground">{summarizeInput(a.tool_input)}</p>
-            <p className="mt-1 text-[12.5px] text-muted-foreground">{a.reason}</p>
-            <div className="flex items-center gap-3 pt-1 text-[11.5px] text-faint-foreground">
-              {a.matched_rule && <span>Rule: {a.matched_rule}</span>}
-              <span>{timeAgo(a.created_at)}</span>
-            </div>
-          </DataRow>
-        ))
+        <div className="divide-y divide-white/[0.06]">
+          {filtered.map((a) => (
+            <DataRow
+              key={a.id}
+              icon={<ExclamationTriangleIcon className="text-status-review" />}
+              trailing={
+                <>
+                  {a.matched_rule && <Chip label={a.matched_rule} />}
+                  <AvatarChip label={a.agent_label} />
+                  <span className="w-16 shrink-0 text-right text-[12px] text-muted-foreground">
+                    {timeAgo(a.created_at)}
+                  </span>
+                  <ApprovalButtons id={a.id} />
+                </>
+              }
+            >
+              <p className="truncate text-[13px] font-medium text-foreground">
+                {a.agent_label ?? "Unknown agent"}
+                <span className="text-muted-foreground"> requested </span>
+                <Code>{a.tool_name}</Code>
+              </p>
+              <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
+                {a.reason} <span className="font-mono text-faint-foreground">· {summarizeInput(a.tool_input)}</span>
+              </p>
+            </DataRow>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -155,9 +162,9 @@ export function ResolvedApprovals({ resolved }: { resolved: ResolvedApproval[] }
   }
 
   return (
-    <section className="rounded-none border border-border bg-panel">
-      <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-2.5">
-        <h2 className="text-[13.5px] font-medium text-foreground">Recently resolved</h2>
+    <section>
+      <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] px-4 pb-2.5">
+        <h2 className="text-[13px] font-medium text-foreground">Recently resolved</h2>
         <div className="flex items-center gap-2">
           <Select value={filter} onValueChange={(v) => setFilter(v as ResolvedFilter)}>
             <SelectTrigger size="sm">

@@ -30,13 +30,15 @@ export default async function PoliciesPage() {
         }
       />
 
-      <div className="rounded-none border border-border bg-panel">
+      <>
         {contracts.length === 0 ? (
-          <EmptyState
-            icon={FileTextIcon}
-            title="No Intent Contracts yet"
-            description="Describe an agent's intent in plain English to create your first one."
-          />
+          <div className="rounded-none border border-border bg-panel">
+            <EmptyState
+              icon={FileTextIcon}
+              title="No Intent Contracts yet"
+              description="Describe an agent's intent in plain English to create your first one."
+            />
+          </div>
         ) : (
           <Table>
             <TableHeader>
@@ -80,7 +82,7 @@ export default async function PoliciesPage() {
             </TableBody>
           </Table>
         )}
-      </div>
+      </>
     </div>
   );
 }

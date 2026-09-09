@@ -3,7 +3,7 @@ import { ArrowLeftIcon } from "@radix-ui/react-icons";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { VerdictBadge } from "@/components/verdict-badge";
+import { StatusIndicator } from "@/components/ui/status-indicator";
 import { getContract } from "@/lib/api";
 import { ContractStatusToggle } from "./status-toggle";
 
@@ -59,12 +59,11 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="pt-6">
-          <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Compiled rules ({contract.rules.length})
-          </p>
-          <Table>
+      <div>
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          Compiled rules ({contract.rules.length})
+        </p>
+        <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Resource</TableHead>
@@ -81,15 +80,14 @@ export default async function ContractDetailPage({ params }: { params: Promise<{
                   <TableCell className="font-mono text-xs">{r.resource_action ?? "—"}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">{conditionText(r.condition)}</TableCell>
                   <TableCell>
-                    <VerdictBadge verdict={r.action} />
+                    <StatusIndicator status={r.action} />
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">{r.reason ?? r.rule_name}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { VerdictBadge } from "@/components/verdict-badge";
+import { StatusIndicator } from "@/components/ui/status-indicator";
 import { EmptyState } from "@/components/common/empty-state";
 import { decisionSummary, listDecisions, listApprovals, listTokens } from "@/lib/api";
 import { getCurrentOrgId } from "@/lib/current-org";
@@ -87,9 +87,9 @@ export default async function OverviewPage() {
         </div>
       )}
 
-      <section className="rounded-none border border-border bg-panel">
-        <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-          <h2 className="text-[13.5px] font-medium text-foreground">Recent decisions</h2>
+      <section>
+        <div className="flex items-center justify-between border-b border-white/[0.06] px-2 pb-2.5">
+          <h2 className="text-[13px] font-medium text-foreground">Recent decisions</h2>
           <Link href="/decisions" className="text-[12.5px] text-muted-foreground hover:text-foreground">
             View all
           </Link>
@@ -117,7 +117,7 @@ export default async function OverviewPage() {
               {decisions.map((d) => (
                 <TableRow key={d.id}>
                   <TableCell>
-                    <VerdictBadge verdict={d.decision} />
+                    <StatusIndicator status={d.decision} />
                   </TableCell>
                   <TableCell className="text-foreground">{d.agent_label ?? "—"}</TableCell>
                   <TableCell className="font-mono text-[12px] text-muted-foreground">{d.tool_name}</TableCell>

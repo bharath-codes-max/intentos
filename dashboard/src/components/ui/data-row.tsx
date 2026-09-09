@@ -35,15 +35,15 @@ export function DataRow({
           : "text-faint-foreground";
 
   const rowClassName = cn(
-    "flex items-start gap-3 px-4 py-3 transition-colors",
-    (href || onClick) && "cursor-pointer hover:bg-white/[0.03]",
+    "flex items-center gap-3 px-4 py-2 transition-colors duration-150",
+    (href || onClick) && "cursor-pointer hover:bg-white/[0.04]",
     className
   );
 
   const content = (
     <>
       {icon && (
-        <span className={cn("mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md bg-white/[0.05]", toneClass)}>
+        <span className={cn("flex size-5 shrink-0 items-center justify-center rounded-md bg-white/[0.05]", toneClass)}>
           {icon}
         </span>
       )}

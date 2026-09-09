@@ -15,9 +15,7 @@ export default async function ActivityPage() {
         actions={<LiveRefresh />}
       />
 
-      <div className="rounded-none border border-border bg-panel">
-        <ActivityList runs={runs} />
-      </div>
+      <ActivityList runs={runs} />
     </div>
   );
 }

@@ -21,7 +21,7 @@ export function ListGroupHeader({
     <button
       type="button"
       onClick={onToggle}
-      className="flex w-full items-center gap-2 border-b border-t border-border bg-panel-raised px-4 py-2 text-[12.5px] font-medium text-foreground"
+      className="flex w-full items-center gap-2 border-b border-white/[0.06] bg-[#171819] px-4 py-1.5 text-[12px] font-medium text-foreground transition-colors duration-150 hover:bg-[#1b1c1d]"
     >
       <ChevronDownIcon className={cn("size-3 transition-transform", !open && "-rotate-90")} />
       <span className={cn("size-1.5 rounded-full", dotColor)} />
