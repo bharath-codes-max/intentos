@@ -58,9 +58,9 @@
 :root,
 .dark {
   /* Canvas / surfaces */
-  --background: #08090a;
-  --panel: #0d0e10;
-  --panel-raised: #121317;
+  --background: #050505;
+  --panel: #0c0c0e;
+  --panel-raised: #131316;
   --card: var(--panel);
   --card-foreground: var(--foreground);
   --popover: var(--panel-raised);
@@ -105,7 +105,7 @@
 
   --radius: 6px;
 
-  --sidebar: #0a0b0d;
+  --sidebar: #050505;
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--foreground);

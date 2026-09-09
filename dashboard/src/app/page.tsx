@@ -46,9 +46,9 @@ export default async function OverviewPage() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <StatCard label="Agents connected" value={activeAgents} />
         <StatCard label="Total checks" value={total} />
-        <StatCard label="Allowed" value={allow} tone="allow" />
-        <StatCard label="Needs review" value={review} tone="review" />
-        <StatCard label="Blocked" value={block} tone="block" />
+        <StatCard label="Allowed" value={allow} />
+        <StatCard label="Needs review" value={review} />
+        <StatCard label="Blocked" value={block} />
       </div>
 
       {total > 0 && (
@@ -124,46 +124,13 @@ export default async function OverviewPage() {
   );
 }
 
-function StatCard({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number;
-  tone?: "allow" | "review" | "block";
-}) {
-  const border =
-    tone === "allow"
-      ? "color-mix(in oklch, var(--status-allow), transparent 75%)"
-      : tone === "review"
-        ? "color-mix(in oklch, var(--status-review), transparent 75%)"
-        : tone === "block"
-          ? "color-mix(in oklch, var(--status-block), transparent 75%)"
-          : "rgba(255,255,255,0.08)";
-
-  const glow =
-    tone === "allow"
-      ? "0 0 24px color-mix(in oklch, var(--status-allow), transparent 95%)"
-      : tone === "review"
-        ? "0 0 24px color-mix(in oklch, var(--status-review), transparent 95%)"
-        : tone === "block"
-          ? "0 0 24px color-mix(in oklch, var(--status-block), transparent 95%)"
-          : "none";
-
-  const text = tone ? { allow: "text-status-allow", review: "text-status-review", block: "text-status-block" }[tone] : "text-foreground";
-
+function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div
-      className="rounded-xl border px-4 py-3.5"
-      style={{
-        background: "rgba(255,255,255,0.03)",
-        borderColor: border,
-        boxShadow: `inset 0 1px rgba(255,255,255,.04), 0 1px 2px rgba(0,0,0,.2), ${glow}`,
-      }}
-    >
-      <p className={`text-[26px] font-medium tabular-nums leading-none tracking-tight ${text}`}>{value}</p>
-      <p className="mt-2 text-[12.5px] text-muted-foreground">{label}</p>
+    <div className="rounded-2xl bg-panel px-5 py-4">
+      <p className="text-[13px] text-muted-foreground">{label}</p>
+      <p className="mt-2 text-[32px] font-semibold tabular-nums leading-none tracking-tight text-foreground">
+        {value}
+      </p>
     </div>
   );
 }
