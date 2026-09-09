@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, CSSProperties } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +20,7 @@ export function DataRow({
 }: {
   icon?: ReactNode;
   iconTone?: "default" | "allow" | "review" | "block";
-  /** When set, renders the icon on a solid colored square with a black icon — the "all icons colored" treatment. */
+  /** When set, colors the icon glyph itself (no background fill) — the "all icons colored" treatment. */
   iconColor?: string;
   children: ReactNode;
   trailing?: ReactNode;
@@ -48,10 +48,11 @@ export function DataRow({
       {icon && (
         <span
           className={cn(
-            "flex size-5 shrink-0 items-center justify-center rounded-md",
-            iconColor ? "[&_svg]:!text-black" : cn("bg-white/[0.05]", toneClass)
+            "flex size-5 shrink-0 items-center justify-center rounded-md bg-white/[0.05]",
+            !iconColor && toneClass,
+            iconColor && "[&_svg]:!text-[var(--icon-color)]"
           )}
-          style={iconColor ? { background: iconColor } : undefined}
+          style={iconColor ? ({ "--icon-color": iconColor } as CSSProperties) : undefined}
         >
           {icon}
         </span>

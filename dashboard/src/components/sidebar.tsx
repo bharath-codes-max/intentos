@@ -38,7 +38,7 @@ export function Sidebar() {
             collapsed ? "justify-center px-0" : "px-[10px]",
             active
               ? cn("bg-sidebar-accent font-medium", TEXT_ACTIVE)
-              : cn("font-normal", TEXT_INACTIVE, TEXT_INACTIVE_HOVER, "hover:bg-sidebar-accent/70")
+              : cn("font-medium", TEXT_INACTIVE, TEXT_INACTIVE_HOVER, "hover:bg-sidebar-accent/70")
           )}
         >
           <item.icon
