@@ -1,4 +1,3 @@
-import { PageHeader } from "@/components/ui/page-header";
 import { Share2Icon } from "@radix-ui/react-icons";
 import { EmptyState } from "@/components/common/empty-state";
 import { listDecisions, getDecisionFlow } from "@/lib/api";
@@ -18,20 +17,12 @@ export default async function CanvasPage({
 
   if (!targetId) {
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Governance Canvas"
-          description="See exactly how one action moved through your governance — as a live flow, not a table row."
+      <div className="flex h-full items-center justify-center p-2">
+        <EmptyState
           icon={Share2Icon}
-          iconColor="#8C8FFF"
+          title="Nothing to visualize yet"
+          description="Once an agent's action is checked, you'll be able to see it walk through your governance here."
         />
-        <div className="p-2">
-          <EmptyState
-            icon={Share2Icon}
-            title="Nothing to visualize yet"
-            description="Once an agent's action is checked, you'll be able to see it walk through your governance here."
-          />
-        </div>
       </div>
     );
   }
@@ -39,13 +30,7 @@ export default async function CanvasPage({
   const flow = await getDecisionFlow(orgId, targetId);
 
   return (
-    <div className="flex h-full flex-col space-y-6">
-      <PageHeader
-        title="Governance Canvas"
-        description="See exactly how one action moved through your governance — as a live flow, not a table row."
-        icon={Share2Icon}
-        iconColor="#8C8FFF"
-      />
+    <div className="flex h-full min-h-0 flex-col">
       <GovernanceCanvas flow={flow} recentDecisions={recentDecisions} />
     </div>
   );

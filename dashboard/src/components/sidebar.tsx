@@ -41,10 +41,7 @@ export function Sidebar() {
               : cn("font-medium", TEXT_INACTIVE, TEXT_INACTIVE_HOVER, "hover:bg-sidebar-accent/70")
           )}
         >
-          <item.icon
-            className="size-[15px] shrink-0"
-            style={{ color: item.color }}
-          />
+          <item.icon className={cn("size-[15px] shrink-0", active ? TEXT_ACTIVE : "text-[rgba(235,235,245,0.45)]")} />
           {!collapsed && <span className="truncate">{item.label}</span>}
         </Link>
       </li>
