@@ -64,6 +64,34 @@ export interface Decision {
   employee_email: string | null;
 }
 
+export interface DecisionFlow {
+  id: string;
+  tool_name: string;
+  tool_input: Record<string, unknown>;
+  decision: "allow" | "block" | "review";
+  reason: string;
+  latency_ms: number;
+  created_at: string;
+  approval_status: "pending" | "approved" | "denied" | null;
+  reviewer: string | null;
+  resolved_at: string | null;
+  project: { normalized_repo?: string; repo_root?: string; cwd?: string } | null;
+  employee_email: string | null;
+  agent_label: string | null;
+  agent_type: string | null;
+  device_owner_email: string | null;
+  policy_id: string | null;
+  matched_rule: string | null;
+  policy_condition: unknown;
+  policy_action: "ALLOW" | "BLOCK" | "REVIEW" | null;
+  policy_reason: string | null;
+  contract_id: string | null;
+  contract_name: string | null;
+  contract_intent: string | null;
+  contract_status: "draft" | "active" | "archived" | null;
+  contract_project_scope: string | null;
+}
+
 export type Condition = { field: string; op: string; value: string };
 
 export interface CompiledRule {
@@ -179,6 +207,10 @@ export function setPolicyActive(id: string, active: boolean) {
 
 export function listDecisions(orgId: string, limit = 50) {
   return api<Decision[]>(`/v1/decisions?org_id=${orgId}&limit=${limit}`);
+}
+
+export function getDecisionFlow(orgId: string, id: string) {
+  return api<DecisionFlow>(`/v1/decisions/${id}/flow?org_id=${orgId}`);
 }
 
 export function decisionSummary(orgId: string) {

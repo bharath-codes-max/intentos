@@ -45,6 +45,33 @@ export async function decisionsRoutes(app: FastifyInstance) {
     `;
   });
 
+  /** Everything the Governance Canvas needs to render one decision as a flow diagram — the
+   *  decision itself, the device/employee that triggered it, and the Intent Contract + policy
+   *  rule that produced the verdict (both null if nothing matched, i.e. a default-allow). One
+   *  round trip instead of the canvas piecing this together from three separate list endpoints. */
+  app.get("/v1/decisions/:id/flow", { preHandler: requireAdmin }, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const { org_id } = req.query as { org_id?: string };
+
+    const [row] = await sql`
+      select
+        d.id, d.tool_name, d.tool_input, d.decision, d.reason, d.latency_ms, d.created_at,
+        d.approval_status, d.reviewer, d.resolved_at, d.project, d.employee_email,
+        t.label as agent_label, t.agent_type, t.owner_email as device_owner_email,
+        p.id as policy_id, p.rule_name as matched_rule, p.condition as policy_condition,
+        p.action as policy_action, p.reason as policy_reason,
+        c.id as contract_id, c.name as contract_name, c.natural_language as contract_intent,
+        c.status as contract_status, c.project_scope as contract_project_scope
+      from decisions d
+      left join agent_tokens t on t.id = d.token_id
+      left join policies p on p.id = d.matched_policy_id
+      left join intent_contracts c on c.id = p.contract_id
+      where d.id = ${id} and d.org_id = ${org_id ?? null}
+    `;
+    if (!row) return reply.code(404).send({ error: "Not found" });
+    return reply.send(row);
+  });
+
   app.get("/v1/decisions/summary", { preHandler: requireAdmin }, async (req) => {
     const { org_id } = req.query as { org_id?: string };
     const [row] = await sql`

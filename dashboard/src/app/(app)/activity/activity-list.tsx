@@ -107,7 +107,7 @@ export function ActivityList({ runs }: { runs: AgentRun[] }) {
         <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
           {run.agent_label ?? run.provider}
           {run.employee_email && <> · {run.employee_email}</>} ·{" "}
-          {new Date(run.started_at).toLocaleString(undefined, {
+          {new Date(run.started_at).toLocaleString("en-US", {
             month: "short",
             day: "numeric",
             hour: "2-digit",

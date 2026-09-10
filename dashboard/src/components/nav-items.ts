@@ -8,6 +8,7 @@ import {
   CodeIcon,
   Link2Icon,
   PersonIcon,
+  Share2Icon,
 } from "@radix-ui/react-icons";
 
 export type NavItem = {
@@ -28,6 +29,7 @@ export const TOP_NAV: NavItem[] = [
 
 /** Collapsible "Governance" section. */
 export const GOVERNANCE_NAV: NavItem[] = [
+  { href: "/canvas", label: "Governance Canvas", icon: Share2Icon, color: "#8C8FFF" },
   { href: "/policies", label: "Intent Contracts", icon: FileTextIcon, color: "#22D3EE" },
   { href: "/decisions", label: "Decisions", icon: MixIcon, color: "var(--primary)" },
   { href: "/approvals", label: "Approvals", icon: CheckCircledIcon, color: "var(--status-review)" },

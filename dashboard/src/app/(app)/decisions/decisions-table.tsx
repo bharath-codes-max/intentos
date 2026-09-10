@@ -28,7 +28,7 @@ const GROUPS: { key: "review" | "block" | "allow"; label: string; dot: string }[
 ];
 
 function formatTime(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, {
+  return new Date(iso).toLocaleString("en-US", {
     month: "short",
     day: "numeric",
     hour: "2-digit",
