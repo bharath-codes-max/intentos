@@ -63,10 +63,11 @@ export function AuthShowcase() {
   const advance = () => setStep((s) => (s === STEPS.length - 1 ? 0 : s + 1));
 
   return (
-    <div className="relative hidden h-full w-full overflow-hidden bg-[radial-gradient(ellipse_120%_80%_at_20%_0%,color-mix(in_oklch,var(--primary),transparent_55%),var(--background)_60%)] lg:flex lg:flex-col lg:justify-center lg:p-16">
+    <div className="relative hidden h-full w-full overflow-hidden bg-[radial-gradient(ellipse_120%_80%_at_20%_0%,color-mix(in_oklch,var(--primary),transparent_55%),var(--background)_60%)] lg:flex">
       <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(var(--foreground)_1px,transparent_1px),linear-gradient(90deg,var(--foreground)_1px,transparent_1px)] [background-size:40px_40px]" />
 
-      <div className="relative max-w-md">
+      <div className="relative z-10 flex h-full w-full flex-col justify-center gap-10 px-16">
+      <div className="max-w-md">
         <h2 className="text-[28px] leading-tight font-bold tracking-tight text-foreground">
           Every AI agent action, seen before it happens.
         </h2>
@@ -79,7 +80,7 @@ export function AuthShowcase() {
       <button
         type="button"
         onClick={advance}
-        className="group relative mt-10 w-full max-w-md cursor-pointer animate-[float_5s_ease-in-out_infinite] rounded-xl border border-white/[0.08] bg-panel/90 p-4 text-left shadow-[0_24px_60px_rgba(0,0,0,0.5)] backdrop-blur transition-colors hover:border-white/[0.16]"
+        className="group relative w-full max-w-md cursor-pointer animate-[float_5s_ease-in-out_infinite] rounded-xl border border-white/[0.1] bg-panel/90 p-4 text-left shadow-[0_2px_0_rgba(255,255,255,0.04)_inset,0_1px_1px_rgba(255,255,255,0.06)_inset,0_30px_60px_-12px_rgba(0,0,0,0.7),0_18px_36px_-18px_rgba(0,0,0,0.6),0_0_0_1px_rgba(0,0,0,0.3)] backdrop-blur transition-colors hover:border-white/[0.2]"
       >
         <div className="mb-3 flex items-center justify-between border-b border-white/[0.06] pb-3">
           <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
@@ -119,6 +120,7 @@ export function AuthShowcase() {
           </span>
         </div>
       </button>
+      </div>
     </div>
   );
 }
