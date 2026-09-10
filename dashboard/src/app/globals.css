@@ -97,6 +97,15 @@
   --status-block: #e5534b;
   --status-block-bg: rgba(229, 83, 75, 0.12);
 
+  /* Elevation — layered shadows for surfaces that sit "above" the canvas (cards, dropdowns,
+     toolbars). A thin inset highlight + soft drop shadow reads as a physically raised panel
+     instead of a flat, same-plane rectangle — this is the main thing distinguishing a premium
+     dark UI from a flat one, since color alone (panel vs background) barely registers at this
+     tonal distance. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.045) inset;
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+
   --chart-1: var(--primary);
   --chart-2: var(--status-allow);
   --chart-3: var(--status-review);

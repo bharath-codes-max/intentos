@@ -13,7 +13,7 @@ export function VerdictBadge({ verdict }: { verdict: string }) {
   return (
     <span
       className={cn(
-        "inline-flex h-5 min-w-16 items-center justify-center gap-1.5 rounded px-2 text-[11px] leading-none font-medium tracking-wide uppercase",
+        "inline-flex h-5 min-w-16 items-center justify-center gap-1.5 rounded-full px-2.5 text-[11px] leading-none font-semibold tracking-wide uppercase",
         style.bg,
         style.fg
       )}

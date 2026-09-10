@@ -132,6 +132,7 @@ export function DecisionsTable({ decisions }: { decisions: Decision[] }) {
 
   return (
     <>
+      <div className="overflow-hidden rounded-lg border border-border shadow-[var(--shadow-md)]">
       <FilterBar resultCount={filtered.length} totalCount={decisions.length}>
         <SearchInput value={search} onChange={setSearch} placeholder="Search tool, reason, rule…" className="w-56" />
         <Select value={decisionFilter} onValueChange={(v) => setDecisionFilter(v as DecisionFilter)}>
@@ -212,6 +213,7 @@ export function DecisionsTable({ decisions }: { decisions: Decision[] }) {
       ) : (
         <div className="divide-y divide-border">{filtered.map(renderRow)}</div>
       )}
+      </div>
 
       <Drawer open={selected !== null} onOpenChange={(open) => !open && setSelected(null)}>
         <DrawerContent>

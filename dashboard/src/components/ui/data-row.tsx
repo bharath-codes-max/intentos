@@ -38,8 +38,8 @@ export function DataRow({
           : "text-faint-foreground";
 
   const rowClassName = cn(
-    "flex items-center gap-3 px-4 py-2 transition-colors duration-150",
-    (href || onClick) && "cursor-pointer hover:bg-white/[0.04]",
+    "group/row relative flex items-center gap-3 px-4 py-2.5 transition-colors duration-150",
+    (href || onClick) && "cursor-pointer hover:bg-white/[0.035]",
     className
   );
 
