@@ -229,4 +229,34 @@ create table if not exists org_invites (
   revoked_at timestamptz
 );
 
+-- Per-device project/folder scope. 'all' (default) = unchanged existing behavior, every
+-- project on this device is governed by the org's active contracts. 'exclude' = named
+-- projects are skipped entirely (default allow, no policy check) — everything else stays
+-- governed normally. 'include_only' = named projects are governed normally, but ANY other
+-- project on this device is hard-blocked outright — a true allowlist/sandbox mode.
+-- scope_projects entries are matched against the incoming action's normalized_repo (or
+-- repo_root/cwd fallback for non-git folders) as a substring, same convention as policy
+-- conditions elsewhere in this schema.
+alter table agent_tokens add column if not exists scope_mode text not null default 'all' check (scope_mode in ('all', 'exclude', 'include_only'));
+alter table agent_tokens add column if not exists scope_projects text[] not null default '{}';
+
+-- An employee, from their own device, asks to add a project to their device's scope —
+-- doesn't take effect until an admin approves it. Keeps folder-level access decisions in
+-- the admin's hands even though only the employee knows their own machine's folder names.
+create table if not exists scope_requests (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references orgs(id) on delete cascade,
+  agent_token_id uuid not null references agent_tokens(id) on delete cascade,
+  requested_by uuid references users(id) on delete set null,
+  requested_by_email text not null,
+  project_identifier text not null,
+  requested_action text not null check (requested_action in ('include', 'exclude')),
+  status text not null default 'pending' check (status in ('pending', 'approved', 'denied')),
+  created_at timestamptz not null default now(),
+  resolved_at timestamptz,
+  resolved_by_email text
+);
+
+create index if not exists idx_scope_requests_org_status on scope_requests(org_id, status);
+
 create index if not exists idx_org_invites_code on org_invites(code) where revoked_at is null;

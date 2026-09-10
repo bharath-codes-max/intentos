@@ -8,7 +8,7 @@ export function hashToken(rawToken: string): string {
 export async function resolveToken(rawToken: string) {
   const hash = hashToken(rawToken);
   const rows = await sql`
-    select id, org_id, agent_type, label, owner_user_id, owner_email
+    select id, org_id, agent_type, label, owner_user_id, owner_email, scope_mode, scope_projects
     from agent_tokens
     where token_hash = ${hash} and revoked_at is null
     limit 1

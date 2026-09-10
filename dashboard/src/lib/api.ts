@@ -433,3 +433,43 @@ export function listEmployees(token: string) {
 export function revokeEmployee(token: string, id: string) {
   return userApi<{ revoked: boolean }>(token, `/v1/employees/${id}/revoke`, { method: "POST" });
 }
+
+// --- Per-device project scope (admin) and scope requests (employee -> admin approval) ---
+
+export type ScopeMode = "all" | "exclude" | "include_only";
+
+export function setTokenScope(token: string, tokenId: string, scopeMode: ScopeMode, scopeProjects: string[]) {
+  return userApi<{ id: string; scope_mode: ScopeMode; scope_projects: string[] }>(token, `/v1/tokens/${tokenId}/scope`, {
+    method: "PATCH",
+    body: JSON.stringify({ scope_mode: scopeMode, scope_projects: scopeProjects }),
+  });
+}
+
+export function requestScopeChange(token: string, projectIdentifier: string, action: "include" | "exclude") {
+  return userApi<{ id: string; status: string; created_at: string }>(token, "/v1/scope-requests", {
+    method: "POST",
+    body: JSON.stringify({ project_identifier: projectIdentifier, requested_action: action }),
+  });
+}
+
+export interface ScopeRequest {
+  id: string;
+  project_identifier: string;
+  requested_action: "include" | "exclude";
+  status: "pending" | "approved" | "denied";
+  created_at: string;
+  resolved_at: string | null;
+  requested_by_email: string;
+  device_label: string | null;
+}
+
+export function listScopeRequests(token: string) {
+  return userApi<ScopeRequest[]>(token, "/v1/scope-requests");
+}
+
+export function resolveScopeRequest(token: string, id: string, approved: boolean) {
+  return userApi<{ resolved: boolean }>(token, `/v1/scope-requests/${id}/resolve`, {
+    method: "POST",
+    body: JSON.stringify({ approved }),
+  });
+}

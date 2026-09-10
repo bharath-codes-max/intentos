@@ -8,6 +8,7 @@ import { LogoutButton } from "@/components/logout-button";
 import { getMe, listTokens } from "@/lib/api";
 import { getSessionToken } from "@/lib/current-session";
 import { CopyCommand } from "@/app/(app)/integrations/copy-command";
+import { ScopeRequestForm } from "./scope-request-form";
 
 export default async function EmployeePage() {
   const token = await getSessionToken();
@@ -77,6 +78,8 @@ export default async function EmployeePage() {
           <p className="text-[12px] text-muted-foreground">
             Once connected, you can close this page — Claude Code stays governed automatically. You don&apos;t need to come back here unless you want to disconnect a device.
           </p>
+
+          {connected && <ScopeRequestForm />}
         </CardContent>
       </Card>
     </div>

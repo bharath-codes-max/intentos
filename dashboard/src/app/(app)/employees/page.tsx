@@ -3,10 +3,11 @@ import { redirect } from "next/navigation";
 import { PersonIcon } from "@radix-ui/react-icons";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent } from "@/components/ui/card";
-import { listEmployees, getActiveInvite } from "@/lib/api";
+import { listEmployees, getActiveInvite, listScopeRequests } from "@/lib/api";
 import { getSessionToken, getRole } from "@/lib/current-session";
 import { InviteLinkCard } from "./invite-link-card";
 import { EmployeesTable } from "./employees-table";
+import { ScopeRequestsPanel } from "./scope-requests-panel";
 
 export default async function EmployeesPage() {
   const token = await getSessionToken();
@@ -14,7 +15,11 @@ export default async function EmployeesPage() {
   if (!token) redirect("/enter");
   if (role !== "admin") redirect("/employee");
 
-  const [employees, invite] = await Promise.all([listEmployees(token), getActiveInvite(token)]);
+  const [employees, invite, scopeRequests] = await Promise.all([
+    listEmployees(token),
+    getActiveInvite(token),
+    listScopeRequests(token),
+  ]);
 
   const h = await headers();
   const host = h.get("host") ?? "localhost:3000";
@@ -35,6 +40,14 @@ export default async function EmployeesPage() {
           <InviteLinkCard inviteUrl={inviteUrl} />
         </CardContent>
       </Card>
+
+      {scopeRequests.length > 0 && (
+        <Card>
+          <CardContent className="pt-6">
+            <ScopeRequestsPanel requests={scopeRequests} />
+          </CardContent>
+        </Card>
+      )}
 
       <EmployeesTable employees={employees} />
     </div>

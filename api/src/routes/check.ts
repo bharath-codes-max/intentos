@@ -34,6 +34,31 @@ const EXECUTION_STATUS_FOR: Record<Verdict, "denied" | "waiting_approval" | "att
   allow: "attempted",
 };
 
+/**
+ * Per-device project scope, checked BEFORE policy evaluation. 'exclude' devices skip policy
+ * checks entirely for named projects (default allow, no rule can override that — it's meant
+ * as "don't govern my own sandbox," not a loophole a policy could still block through).
+ * 'include_only' devices hard-block anything outside the named projects, before any policy
+ * gets a chance to allow it — this is an allowlist, not a suggestion.
+ */
+function applyScope(
+  token: { scope_mode: string; scope_projects: string[] },
+  call: { project?: { normalized_repo?: string; repo_root?: string; cwd?: string } }
+): { verdict: Verdict; reason: string; matchedPolicyId: null } | null {
+  if (token.scope_mode === "all" || token.scope_projects.length === 0) return null;
+
+  const projectKey = (call.project?.normalized_repo || call.project?.repo_root || call.project?.cwd || "").toLowerCase();
+  const matches = projectKey !== "" && token.scope_projects.some((p) => projectKey.includes(p.toLowerCase()));
+
+  if (token.scope_mode === "exclude" && matches) {
+    return { verdict: "allow", reason: "Project excluded from this device's governance scope.", matchedPolicyId: null };
+  }
+  if (token.scope_mode === "include_only" && !matches) {
+    return { verdict: "block", reason: "This project is outside this device's allowed scope.", matchedPolicyId: null };
+  }
+  return null;
+}
+
 export async function checkRoute(app: FastifyInstance) {
   app.post("/v1/check", async (req, reply) => {
     const started = Date.now();
@@ -55,13 +80,18 @@ export async function checkRoute(app: FastifyInstance) {
     }
     const call = parsed.data;
 
-    const policies = (await sql`
-      select id, rule_name, condition, action, priority, reason
-      from policies
-      where org_id = ${token.org_id} and active = true
-    `) as unknown as PolicyRow[];
-
-    const result = evaluate(call, policies);
+    const scopeOverride = applyScope(token as unknown as { scope_mode: string; scope_projects: string[] }, call);
+    let result: { verdict: Verdict; reason: string; matchedPolicyId: string | null };
+    if (scopeOverride) {
+      result = scopeOverride;
+    } else {
+      const policies = (await sql`
+        select id, rule_name, condition, action, priority, reason
+        from policies
+        where org_id = ${token.org_id} and active = true
+      `) as unknown as PolicyRow[];
+      result = evaluate(call, policies);
+    }
     const latencyMs = Date.now() - started;
     const approvalStatus = result.verdict === "review" ? "pending" : null;
     // Bounds how long a pending review stays approvable — independent of, and normally longer
