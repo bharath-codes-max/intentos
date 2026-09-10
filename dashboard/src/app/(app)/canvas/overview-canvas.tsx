@@ -2,70 +2,32 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import {
-  PersonIcon,
-  DesktopIcon,
-  FileTextIcon,
-  QuestionMarkCircledIcon,
-  ExternalLinkIcon,
-  ArrowLeftIcon,
-  PaperPlaneIcon,
-  CopyIcon,
-  CheckIcon,
-  ReloadIcon,
-  Cross2Icon,
-  PlusIcon,
-} from "@radix-ui/react-icons";
+import { PaperPlaneIcon, CopyIcon, CheckIcon, ReloadIcon, Cross2Icon, ArrowLeftIcon } from "@radix-ui/react-icons";
 import { Button } from "@/components/ui/button";
 import { VerdictBadge } from "@/components/verdict-badge";
-import { colorFor, initialsFromEmail } from "@/lib/color-hash";
-import type { Employee, AgentToken, ScopeRequest, Contract, Decision } from "@/lib/api";
+import type { Decision } from "@/lib/api";
 import { useCanvasControls } from "./use-canvas-controls";
-import { CanvasSurface, TONE_COLOR, TONE_BG, type Tone, type GenericNode, type GenericEdge } from "./canvas-shell";
-import { ApproveForm, type SelectableContract } from "../employees/approve-request-dialog";
-import { RevokeDialog } from "../employees/revoke-employee-dialog";
-import { resolveScopeRequestAction, regenerateInviteAction } from "../employees/actions";
+import { CanvasSurface, TONE_COLOR, type GenericNode, type GenericEdge } from "./canvas-shell";
+import { regenerateInviteAction } from "../employees/actions";
 import { addToast } from "@/components/ui/toast";
 
-type NodeKind = "employee" | "device" | "request" | "contract" | "invite" | "resolve";
+type NodeKind = "invite";
 
 interface OverviewNode extends GenericNode {
   kind: NodeKind;
-  icon: typeof PersonIcon;
+  icon: typeof PaperPlaneIcon;
   title: string;
   subtitle: string;
-  tone: Tone;
-  statusLabel?: string;
-  employee?: Employee;
-  device?: AgentToken;
-  request?: ScopeRequest;
-  contract?: Contract;
-  /** True only for nodes the admin dragged onto the canvas themselves (not derived from live
-   *  server data) — these are the only ones that can be removed from the canvas. */
-  composed?: boolean;
-  /** Invite nodes only — purely local tracking of who this invite was meant for. Nothing is
-   *  actually emailed; this just labels the node so it reads as "invited: x@y.com" instead of
-   *  a bare, anonymous "Invite Employee" box. Not persisted server-side. */
+  /** Purely local tracking of who an invite node was meant for. Nothing is actually emailed;
+   *  this just labels the node so it reads as "invited: x@y.com" instead of a bare box. Not
+   *  persisted server-side. */
   inviteTarget?: string | null;
-  /** "resolve" nodes only — which pending request this one is attaching a contract to. */
-  resolveRequest?: ScopeRequest;
 }
 
 const PALETTE_ITEMS = [{ kind: "invite" as const, label: "Invite Employee", icon: PaperPlaneIcon }];
 
-const COL_EMPLOYEE = 40;
-const COL_DEVICE = 380;
-const COL_REQUEST = 720;
-const COL_CONTRACT = 1100;
-const NODE_H = 76;
-const REQUEST_H = 88;
-const GAP = 18;
-const TOP_PAD = 44;
-
-function stack<T>(items: T[], x: number, w: number, h: number): { item: T; x: number; y: number; w: number }[] {
-  return items.map((item, i) => ({ item, x, y: TOP_PAD + i * (h + GAP), w }));
-}
+const WORLD_W = 1600;
+const WORLD_H = 900;
 
 function timeAgo(iso: string): string {
   const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
@@ -75,95 +37,6 @@ function timeAgo(iso: string): string {
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours}h ago`;
   return `${Math.floor(hours / 24)}d ago`;
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
-}
-
-function buildGraph(
-  employees: Employee[],
-  devices: AgentToken[],
-  pendingRequests: ScopeRequest[],
-  contracts: Contract[]
-): { nodes: OverviewNode[]; edges: GenericEdge[]; worldW: number; worldH: number } {
-  const nodes: OverviewNode[] = [];
-  const edges: GenericEdge[] = [];
-
-  const employeeStack = stack(employees, COL_EMPLOYEE, 260, NODE_H);
-  for (const { item: e, x, y, w } of employeeStack) {
-    nodes.push({
-      id: `employee:${e.id}`,
-      x,
-      y,
-      width: w,
-      kind: "employee",
-      icon: PersonIcon,
-      title: e.email,
-      subtitle: e.role === "admin" ? "Admin" : "Employee",
-      tone: "neutral",
-      statusLabel: e.revoked_at ? "REVOKED" : undefined,
-      employee: e,
-    });
-  }
-
-  const deviceStack = stack(devices, COL_DEVICE, 260, NODE_H);
-  for (const { item: d, x, y, w } of deviceStack) {
-    nodes.push({
-      id: `device:${d.id}`,
-      x,
-      y,
-      width: w,
-      kind: "device",
-      icon: DesktopIcon,
-      title: d.label,
-      subtitle: d.agent_type,
-      tone: "neutral",
-      statusLabel: d.revoked_at ? "REVOKED" : undefined,
-      device: d,
-    });
-    const owner = employees.find((e) => e.email === d.owner_email);
-    if (owner) edges.push({ from: `employee:${owner.id}`, to: `device:${d.id}`, tone: "neutral", active: !d.revoked_at });
-  }
-
-  const requestStack = stack(pendingRequests, COL_REQUEST, 300, REQUEST_H);
-  for (const { item: r, x, y, w } of requestStack) {
-    nodes.push({
-      id: `request:${r.id}`,
-      x,
-      y,
-      width: w,
-      kind: "request",
-      icon: QuestionMarkCircledIcon,
-      title: `${r.requested_action === "include" ? "Include" : "Exclude"} "${r.project_identifier}"`,
-      subtitle: r.requested_by_email,
-      tone: "review",
-      statusLabel: "PENDING",
-      request: r,
-    });
-    const requester = employees.find((e) => e.email === r.requested_by_email);
-    if (requester) edges.push({ from: `employee:${requester.id}`, to: `request:${r.id}`, tone: "review", active: true });
-  }
-
-  const contractStack = stack(contracts, COL_CONTRACT, 300, NODE_H);
-  for (const { item: c, x, y, w } of contractStack) {
-    nodes.push({
-      id: `contract:${c.id}`,
-      x,
-      y,
-      width: w,
-      kind: "contract",
-      icon: FileTextIcon,
-      title: c.name,
-      subtitle: c.project_scope ? `Scoped to ${c.project_scope}` : "Org-wide",
-      tone: "allow",
-      contract: c,
-    });
-  }
-
-  const tallest = Math.max(employeeStack.length * (NODE_H + GAP), deviceStack.length * (NODE_H + GAP), requestStack.length * (REQUEST_H + GAP), contractStack.length * (NODE_H + GAP), 200);
-
-  return { nodes, edges, worldW: COL_CONTRACT + 340, worldH: tallest + TOP_PAD * 2 };
 }
 
 /** Darker-gray "matte" background for any editable field sitting on a pure-black card — the
@@ -184,39 +57,10 @@ function InviteNodeBody({ node, onTrack }: { node: OverviewNode; onTrack: (email
   }
   return (
     <div className="space-y-2 border-t border-white/[0.06] px-3.5 py-3" onMouseDown={(e) => e.stopPropagation()}>
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="name@company.com"
-        className={CARD_INPUT_CLASS}
-      />
-      <Button
-        type="button"
-        size="sm"
-        className="w-full"
-        disabled={!email.trim()}
-        onClick={() => onTrack(email.trim())}
-      >
+      <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@company.com" className={CARD_INPUT_CLASS} />
+      <Button type="button" size="sm" className="w-full" disabled={!email.trim()} onClick={() => onTrack(email.trim())}>
         Mark as invited
       </Button>
-    </div>
-  );
-}
-
-function ResolveNodeBody({
-  node,
-  contracts,
-  onApproved,
-}: {
-  node: OverviewNode;
-  contracts: SelectableContract[];
-  onApproved: () => void;
-}) {
-  if (!node.resolveRequest) return null;
-  return (
-    <div className="border-t border-white/[0.06] px-3.5 py-3" onMouseDown={(e) => e.stopPropagation()}>
-      <ApproveForm request={node.resolveRequest} contracts={contracts} onApproved={onApproved} />
     </div>
   );
 }
@@ -226,17 +70,11 @@ function NodeCard({
   isSelected,
   onRemove,
   onTrackInvite,
-  onSpawnResolve,
-  resolveContracts,
-  onResolveApproved,
 }: {
   n: OverviewNode;
   isSelected: boolean;
-  onRemove?: () => void;
-  onTrackInvite?: (email: string) => void;
-  onSpawnResolve?: () => void;
-  resolveContracts?: SelectableContract[];
-  onResolveApproved?: () => void;
+  onRemove: () => void;
+  onTrackInvite: (email: string) => void;
 }) {
   return (
     <div
@@ -245,60 +83,32 @@ function NodeCard({
       }`}
     >
       <div className="flex items-center gap-3 px-3.5 py-3">
-        <span
-          className="flex size-8 shrink-0 items-center justify-center rounded-md"
-          style={{ background: TONE_COLOR[n.tone] + "22", color: TONE_COLOR[n.tone] }}
-        >
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-md" style={{ background: TONE_COLOR.neutral + "22", color: TONE_COLOR.neutral }}>
           <n.icon className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
           <p className="truncate text-[13px] font-semibold text-foreground">{n.title}</p>
           <p className="truncate text-[11.5px] text-muted-foreground">{n.subtitle}</p>
         </div>
-        {n.statusLabel && (
-          <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[9.5px] font-semibold tracking-wide uppercase ${TONE_BG[n.tone]}`}>
-            {n.statusLabel}
-          </span>
-        )}
-        {n.kind === "request" && onSpawnResolve && (
-          <button
-            type="button"
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              onSpawnResolve();
-            }}
-            className="ml-1 flex size-5.5 shrink-0 items-center justify-center rounded-md bg-primary/15 text-primary transition-colors hover:bg-primary/25"
-            aria-label="Attach a contract to approve this request"
-            title="Attach a contract to approve this request"
-          >
-            <PlusIcon className="size-3.5" />
-          </button>
-        )}
-        {n.composed && onRemove && (
-          <button
-            type="button"
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemove();
-            }}
-            className="ml-1 flex size-5 shrink-0 items-center justify-center rounded-md text-faint-foreground opacity-0 transition-opacity hover:bg-white/[0.08] hover:text-foreground group-hover/node:opacity-100"
-            aria-label="Remove from canvas"
-          >
-            <Cross2Icon className="size-3" />
-          </button>
-        )}
+        <button
+          type="button"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
+          className="ml-1 flex size-5 shrink-0 items-center justify-center rounded-md text-faint-foreground opacity-0 transition-opacity hover:bg-white/[0.08] hover:text-foreground group-hover/node:opacity-100"
+          aria-label="Remove from canvas"
+        >
+          <Cross2Icon className="size-3" />
+        </button>
       </div>
-      {n.kind === "invite" && onTrackInvite && <InviteNodeBody node={n} onTrack={onTrackInvite} />}
-      {n.kind === "resolve" && resolveContracts && onResolveApproved && (
-        <ResolveNodeBody node={n} contracts={resolveContracts} onApproved={onResolveApproved} />
-      )}
+      <InviteNodeBody node={n} onTrack={onTrackInvite} />
     </div>
   );
 }
 
-function PaletteItem({ label, icon: Icon, onDragStartKind }: { label: string; icon: typeof PersonIcon; onDragStartKind: string }) {
+function PaletteItem({ label, icon: Icon, onDragStartKind }: { label: string; icon: typeof PaperPlaneIcon; onDragStartKind: string }) {
   return (
     <div
       draggable
@@ -316,77 +126,12 @@ function PaletteItem({ label, icon: Icon, onDragStartKind }: { label: string; ic
   );
 }
 
-function ColumnLabel({ text, x }: { text: string; x: number }) {
-  return (
-    <p className="absolute text-[10.5px] font-semibold tracking-wide text-faint-foreground uppercase" style={{ left: x, top: 10 }}>
-      {text}
-    </p>
-  );
-}
-
-function RevokeFromCanvas({ employee }: { employee: Employee }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <Button type="button" variant="destructive" size="sm" onClick={() => setOpen(true)}>
-        Revoke access
-      </Button>
-      <RevokeDialog employee={employee} open={open} onOpenChange={setOpen} />
-    </>
-  );
-}
-
-function DenyFromCanvas({ request, onDone }: { request: ScopeRequest; onDone: () => void }) {
-  const [pending, start] = useTransition();
-  return (
-    <Button
-      type="button"
-      variant="destructive"
-      size="sm"
-      disabled={pending}
-      onClick={() =>
-        start(async () => {
-          const result = await resolveScopeRequestAction(request.id, false);
-          if (!result.ok) {
-            addToast({ title: "Couldn't deny", description: result.error, type: "error" });
-            return;
-          }
-          onDone();
-        })
-      }
-    >
-      {pending ? "Denying…" : "Deny"}
-    </Button>
-  );
-}
-
-export function OverviewCanvas({
-  employees,
-  devices,
-  pendingRequests,
-  contracts,
-  decisions,
-  inviteUrl,
-}: {
-  employees: Employee[];
-  devices: AgentToken[];
-  pendingRequests: ScopeRequest[];
-  contracts: Contract[];
-  decisions: Decision[];
-  inviteUrl: string;
-}) {
+export function OverviewCanvas({ decisions, inviteUrl }: { decisions: Decision[]; inviteUrl: string }) {
   const router = useRouter();
-  const { nodes: liveNodes, edges, worldW, worldH } = useMemo(
-    () => buildGraph(employees, devices, pendingRequests, contracts),
-    [employees, devices, pendingRequests, contracts]
-  );
-  const controls = useCanvasControls(worldW, worldH);
-  const [composedNodes, setComposedNodes] = useState<OverviewNode[]>([]);
-  const [composedEdges, setComposedEdges] = useState<GenericEdge[]>([]);
-  const nodes = useMemo(() => [...liveNodes, ...composedNodes], [liveNodes, composedNodes]);
-  const allEdges = useMemo(() => [...edges, ...composedEdges], [edges, composedEdges]);
+  const controls = useCanvasControls(WORLD_W, WORLD_H);
+  const [nodes, setNodes] = useState<OverviewNode[]>([]);
+  const edges: GenericEdge[] = [];
   const selected = nodes.find((n) => n.id === controls.selectedId);
-  const isEmpty = nodes.length === 0;
 
   function handleDrop(e: React.DragEvent) {
     const kind = e.dataTransfer.getData("text/plain");
@@ -396,7 +141,7 @@ export function OverviewCanvas({
     const worldX = (e.clientX - rect.left - controls.transform.x) / controls.transform.scale;
     const worldY = (e.clientY - rect.top - controls.transform.y) / controls.transform.scale;
     const id = `invite:${Date.now()}`;
-    setComposedNodes((prev) => [
+    setNodes((prev) => [
       ...prev,
       {
         id,
@@ -407,57 +152,19 @@ export function OverviewCanvas({
         icon: PaperPlaneIcon,
         title: "Invite Employee",
         subtitle: "Not shared yet",
-        tone: "neutral",
-        composed: true,
         inviteTarget: null,
       },
     ]);
     controls.setSelectedId(id);
   }
 
-  function removeComposedNode(id: string) {
-    setComposedNodes((prev) => prev.filter((n) => n.id !== id));
+  function removeNode(id: string) {
+    setNodes((prev) => prev.filter((n) => n.id !== id));
     if (controls.selectedId === id) controls.setSelectedId(null);
   }
 
   function trackInvite(id: string, email: string) {
-    setComposedNodes((prev) => prev.map((n) => (n.id === id ? { ...n, inviteTarget: email } : n)));
-  }
-
-  function spawnResolveNode(request: ScopeRequest) {
-    const resolveId = `resolve:${request.id}`;
-    if (composedNodes.some((n) => n.id === resolveId)) {
-      controls.setSelectedId(resolveId);
-      return;
-    }
-    const requestNode = liveNodes.find((n) => n.id === `request:${request.id}`);
-    const x = (requestNode?.x ?? 0) + (requestNode?.width ?? 300) + 60;
-    const y = requestNode?.y ?? 0;
-    setComposedNodes((prev) => [
-      ...prev,
-      {
-        id: resolveId,
-        x,
-        y,
-        width: 300,
-        kind: "resolve",
-        icon: FileTextIcon,
-        title: request.requested_action === "include" ? "Attach a contract" : "Confirm exclude",
-        subtitle: request.project_identifier,
-        tone: "review",
-        composed: true,
-        resolveRequest: request,
-      },
-    ]);
-    setComposedEdges((prev) => [...prev, { from: `request:${request.id}`, to: resolveId, tone: "review", active: true }]);
-    controls.setSelectedId(resolveId);
-  }
-
-  function handleResolveApproved(resolveId: string) {
-    setComposedNodes((prev) => prev.filter((n) => n.id !== resolveId));
-    setComposedEdges((prev) => prev.filter((e) => e.to !== resolveId));
-    controls.setSelectedId(null);
-    addToast({ title: "Request approved", description: "It's now governed by the attached contract.", type: "success" });
+    setNodes((prev) => prev.map((n) => (n.id === id ? { ...n, inviteTarget: email } : n)));
   }
 
   return (
@@ -472,46 +179,30 @@ export function OverviewCanvas({
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-center gap-2 border-b border-border bg-white/[0.015] px-4 py-2.5">
           <span className="text-[13px] font-medium text-foreground">Command Center</span>
-          <span className="text-[12px] text-muted-foreground">
-            {employees.length} employees · {devices.filter((d) => !d.revoked_at).length} devices · {pendingRequests.length} pending ·{" "}
-            {contracts.length} contracts
-          </span>
         </div>
 
-        {isEmpty ? (
-          <div className="flex flex-1 items-center justify-center p-6 text-center">
+        {nodes.length === 0 ? (
+          <div
+            className="flex flex-1 items-center justify-center p-6 text-center"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleDrop}
+          >
             <p className="max-w-sm text-[13px] text-muted-foreground">
-              Nothing to show yet — drag &quot;Invite Employee&quot; onto the canvas to bring your first person in.
+              Empty canvas — drag &quot;Invite Employee&quot; from the left onto here to get started.
             </p>
           </div>
         ) : (
           <CanvasSurface
-            worldW={worldW}
-            worldH={worldH}
+            worldW={WORLD_W}
+            worldH={WORLD_H}
             nodes={nodes}
-            edges={allEdges}
+            edges={edges}
             controls={controls}
-            resetKey={`${employees.length}-${devices.length}-${pendingRequests.length}-${contracts.length}`}
+            resetKey="blank"
             onDrop={handleDrop}
             renderNode={(n, isSelected) => (
-              <NodeCard
-                n={n}
-                isSelected={isSelected}
-                onRemove={n.composed ? () => removeComposedNode(n.id) : undefined}
-                onTrackInvite={n.kind === "invite" ? (email) => trackInvite(n.id, email) : undefined}
-                onSpawnResolve={n.kind === "request" && n.request ? () => spawnResolveNode(n.request!) : undefined}
-                resolveContracts={n.kind === "resolve" ? contracts : undefined}
-                onResolveApproved={n.kind === "resolve" ? () => handleResolveApproved(n.id) : undefined}
-              />
+              <NodeCard n={n} isSelected={isSelected} onRemove={() => removeNode(n.id)} onTrackInvite={(email) => trackInvite(n.id, email)} />
             )}
-            worldOverlay={
-              <>
-                <ColumnLabel text="Employees" x={COL_EMPLOYEE} />
-                <ColumnLabel text="Devices" x={COL_DEVICE} />
-                <ColumnLabel text="Pending requests" x={COL_REQUEST} />
-                <ColumnLabel text="Intent contracts" x={COL_CONTRACT} />
-              </>
-            }
           />
         )}
       </div>
@@ -543,133 +234,14 @@ export function OverviewCanvas({
         )}
 
         {selected && (
-          <button
-            type="button"
-            onClick={() => controls.setSelectedId(null)}
-            className="mb-3 flex items-center gap-1 rounded-md px-1.5 py-1 text-[11.5px] text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
-          >
-            <ArrowLeftIcon className="size-3" /> Back to recent decisions
-          </button>
-        )}
-
-        {selected?.kind === "employee" && selected.employee && (
           <>
-            <div className="flex items-center gap-2">
-              <span
-                className="flex size-6 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-black/70"
-                style={{ background: colorFor(selected.employee.email) }}
-              >
-                {initialsFromEmail(selected.employee.email)}
-              </span>
-              <p className="truncate text-[14px] font-semibold text-foreground">{selected.employee.email}</p>
-            </div>
-            <div className="mt-4 space-y-3 border-t border-border pt-4">
-              <Field label="Role" value={selected.employee.role} />
-              <Field label="Connected devices" value={String(selected.employee.connected_devices)} />
-              <Field label="Joined" value={formatDate(selected.employee.created_at)} />
-              <Field label="Last activity" value={selected.employee.last_activity_at ? formatDate(selected.employee.last_activity_at) : "No activity yet"} />
-            </div>
-            {selected.employee.role !== "admin" && (
-              <div className="mt-4 border-t border-border pt-4">
-                {selected.employee.revoked_at ? (
-                  <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${TONE_BG.block}`}>
-                    <span className="size-1.5 rounded-full" style={{ background: TONE_COLOR.block }} />
-                    Access revoked
-                  </span>
-                ) : (
-                  <RevokeFromCanvas employee={selected.employee} />
-                )}
-              </div>
-            )}
-          </>
-        )}
-
-        {selected?.kind === "device" && selected.device && (
-          <>
-            <div className="flex items-center gap-2">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-white/[0.08] text-muted-foreground">
-                <DesktopIcon className="size-3.5" />
-              </span>
-              <p className="truncate text-[14px] font-semibold text-foreground">{selected.device.label}</p>
-            </div>
-            <div className="mt-4 space-y-3 border-t border-border pt-4">
-              <Field label="Agent type" value={selected.device.agent_type} />
-              <Field label="Owner" value={selected.device.owner_email ?? "—"} />
-              <Field label="Connected" value={formatDate(selected.device.created_at)} />
-              <Field label="Status" value={selected.device.revoked_at ? "Revoked" : "Active"} />
-            </div>
-          </>
-        )}
-
-        {selected?.kind === "request" && selected.request && (
-          <>
-            <div className="flex items-center gap-2">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-[var(--status-review-bg)] text-[var(--status-review)]">
-                <QuestionMarkCircledIcon className="size-3.5" />
-              </span>
-              <p className="truncate text-[14px] font-semibold text-foreground">
-                {selected.request.requested_action === "include" ? "Include" : "Exclude"} request
-              </p>
-            </div>
-            <div className="mt-4 space-y-3 border-t border-border pt-4">
-              <Field label="Requested by" value={selected.request.requested_by_email} />
-              <Field label="Device" value={selected.request.device_label ?? "Unknown device"} />
-              <Field label="Project / folder" value={selected.request.project_identifier} />
-              <Field label="Requested" value={formatDate(selected.request.created_at)} />
-            </div>
-            <div className="mt-4 flex items-center gap-2 border-t border-border pt-4">
-              <DenyFromCanvas request={selected.request} onDone={() => controls.setSelectedId(null)} />
-            </div>
-            <p className="mt-3 text-[11.5px] text-muted-foreground">
-              Click the <PlusIcon className="inline size-3 align-[-1px]" /> on this node to attach a contract and approve it.
-            </p>
-          </>
-        )}
-
-        {selected?.kind === "resolve" && (
-          <>
-            <div className="flex items-center gap-2">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-[var(--status-review-bg)] text-[var(--status-review)]">
-                <FileTextIcon className="size-3.5" />
-              </span>
-              <p className="truncate text-[14px] font-semibold text-foreground">{selected.title}</p>
-            </div>
-            <p className="mt-1.5 text-[12px] text-muted-foreground">
-              Pick or create a contract directly on the node to finish approving this request.
-            </p>
-          </>
-        )}
-
-        {selected?.kind === "contract" && selected.contract && (
-          <>
-            <div className="flex items-center gap-2">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-[var(--status-allow-bg)] text-[var(--status-allow)]">
-                <FileTextIcon className="size-3.5" />
-              </span>
-              <p className="truncate text-[14px] font-semibold text-foreground">{selected.contract.name}</p>
-            </div>
-            <div className="mt-4 space-y-3 border-t border-border pt-4">
-              <Field label="Scope" value={selected.contract.project_scope ?? "Org-wide"} />
-              <Field label="Status" value={selected.contract.status} />
-              <Field label="Intent" value={selected.contract.natural_language} />
-              <Field
-                label="Rules"
-                value={`${selected.contract.allow_count} allow · ${selected.contract.review_count} review · ${selected.contract.block_count} block`}
-              />
-            </div>
-            <div className="mt-4 border-t border-border pt-4">
-              <Link
-                href={`/policies/${selected.contract.id}`}
-                className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-primary hover:underline"
-              >
-                View full rules <ExternalLinkIcon className="size-3" />
-              </Link>
-            </div>
-          </>
-        )}
-
-        {selected?.kind === "invite" && (
-          <>
+            <button
+              type="button"
+              onClick={() => controls.setSelectedId(null)}
+              className="mb-3 flex items-center gap-1 rounded-md px-1.5 py-1 text-[11.5px] text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
+            >
+              <ArrowLeftIcon className="size-3" /> Back to recent decisions
+            </button>
             <div className="flex items-center gap-2">
               <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary/15 text-primary">
                 <PaperPlaneIcon className="size-3.5" />
@@ -746,15 +318,6 @@ function InviteLinkForCanvas({ inviteUrl }: { inviteUrl: string }) {
           <ReloadIcon /> Regenerate link
         </Button>
       )}
-    </div>
-  );
-}
-
-function Field({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-[10.5px] font-medium tracking-wide text-faint-foreground uppercase">{label}</p>
-      <p className="mt-1 text-[12.5px] text-foreground">{value}</p>
     </div>
   );
 }
