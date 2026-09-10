@@ -45,9 +45,10 @@ export async function runsRoutes(app: FastifyInstance) {
     `;
     if (existing) return reply.send(existing);
 
+    const metadata = parsed.data.metadata ? sql.json(JSON.parse(JSON.stringify(parsed.data.metadata))) : null;
     const [run] = await sql`
-      insert into agent_runs (org_id, agent_token_id, provider, external_session_id, status)
-      values (${token.org_id}, ${token.id}, ${provider}, ${external_session_id}, 'running')
+      insert into agent_runs (org_id, agent_token_id, provider, external_session_id, status, metadata)
+      values (${token.org_id}, ${token.id}, ${provider}, ${external_session_id}, 'running', ${metadata})
       returning id, status
     `;
     return reply.code(201).send(run);

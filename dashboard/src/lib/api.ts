@@ -13,6 +13,7 @@ function requireEnv(name: string): string {
 const BASE_URL = requireEnv("API_BASE_URL");
 const ADMIN_KEY = requireEnv("ADMIN_API_KEY");
 export const DEFAULT_ORG_ID = requireEnv("DEFAULT_ORG_ID");
+export const API_ORIGIN = BASE_URL;
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`, {
@@ -187,6 +188,10 @@ export function createToken(input: { org_id: string; agent_type: string; label: 
   return api<AgentToken & { token: string }>("/v1/tokens", { method: "POST", body: JSON.stringify(input) });
 }
 
+export function revokeToken(id: string) {
+  return api<{ revoked: boolean }>(`/v1/tokens/${id}/revoke`, { method: "POST" });
+}
+
 export function compileIntent(input: { text: string; agent_type?: string }) {
   return api<CompileResult>("/v1/compile-intent", { method: "POST", body: JSON.stringify(input) });
 }
@@ -300,4 +305,78 @@ export function listActivity(orgId: string, filters?: { run_id?: string; categor
   if (filters?.decision) params.set("decision", filters.decision);
   if (filters?.limit) params.set("limit", String(filters.limit));
   return api<ActivityEvent[]>(`/v1/activity?${params.toString()}`);
+}
+
+// --- User auth & device enrollment (Bearer session token, not the admin key) ---
+
+async function publicApi<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    ...init,
+    headers: { "Content-Type": "application/json", ...init?.headers },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Intentos API ${res.status}: ${body}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+function userApi<T>(token: string, path: string, init?: RequestInit): Promise<T> {
+  return publicApi<T>(path, { ...init, headers: { Authorization: `Bearer ${token}`, ...init?.headers } });
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  org_id: string;
+  org_name: string | null;
+}
+
+export function signup(input: { company_name: string; email: string; password: string }) {
+  return publicApi<{ user: AuthUser; session_token: string; expires_at: string }>("/v1/auth/signup", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function login(input: { email: string; password: string }) {
+  return publicApi<{ user: AuthUser; session_token: string; expires_at: string }>("/v1/auth/login", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function getMe(token: string) {
+  return userApi<AuthUser>(token, "/v1/auth/me");
+}
+
+export function logout(token: string) {
+  return userApi<{ signed_out: boolean }>(token, "/v1/auth/logout", { method: "POST" });
+}
+
+export interface DeviceLinkStatus {
+  user_code: string;
+  agent_type: string;
+  hostname: string | null;
+  status: "pending" | "approved" | "denied" | "expired" | "claimed";
+  expires_at: string;
+}
+
+export function getDeviceByCode(token: string, userCode: string) {
+  return userApi<DeviceLinkStatus>(token, `/v1/devices/by-code/${encodeURIComponent(userCode)}`);
+}
+
+export function approveDevice(token: string, userCode: string) {
+  return userApi<{ approved: boolean }>(token, "/v1/devices/approve", {
+    method: "POST",
+    body: JSON.stringify({ user_code: userCode }),
+  });
+}
+
+export function denyDevice(token: string, userCode: string) {
+  return userApi<{ denied: boolean }>(token, "/v1/devices/deny", {
+    method: "POST",
+    body: JSON.stringify({ user_code: userCode }),
+  });
 }

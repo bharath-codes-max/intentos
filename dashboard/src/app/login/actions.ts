@@ -2,24 +2,20 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { signup } from "@/lib/api";
+import { login } from "@/lib/api";
 import { ORG_COOKIE } from "@/lib/current-org";
 import { SESSION_COOKIE } from "@/lib/current-session";
 
-export async function signupAction(formData: FormData) {
-  const company_name = String(formData.get("company_name") ?? "").trim();
+export async function loginAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  if (!company_name || !email || !password) {
-    throw new Error("Company name, email, and password are required");
-  }
+  const next = String(formData.get("next") ?? "") || "/";
 
   let result;
   try {
-    result = await signup({ company_name, email, password });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Signup failed";
-    redirect(`/signup?error=${encodeURIComponent(message.includes("409") ? "That email is already registered" : "Signup failed")}`);
+    result = await login({ email, password });
+  } catch {
+    redirect(`/login?error=invalid&next=${encodeURIComponent(next)}`);
   }
 
   const store = await cookies();
@@ -31,5 +27,5 @@ export async function signupAction(formData: FormData) {
   });
   store.set(ORG_COOKIE, result.user.org_id, { httpOnly: true, sameSite: "lax", path: "/" });
 
-  redirect("/integrations?welcome=1");
+  redirect(next);
 }

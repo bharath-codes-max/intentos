@@ -13,7 +13,7 @@ export async function approvalsRoutes(app: FastifyInstance) {
   app.get("/v1/approvals", { preHandler: requireAdmin }, async (req) => {
     const { org_id } = req.query as { org_id?: string };
     return sql`
-      select d.id, d.tool_name, d.tool_input, d.reason, d.created_at,
+      select d.id, d.tool_name, d.tool_input, d.reason, d.created_at, d.project,
              t.label as agent_label, t.agent_type, p.rule_name as matched_rule
       from decisions d
       left join agent_tokens t on t.id = d.token_id

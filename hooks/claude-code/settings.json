@@ -1,12 +1,58 @@
 {
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/bharathkumar/Music/intentos-live/hooks/intentos-hook.mjs claude-code",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/bharathkumar/Music/intentos-live/hooks/intentos-hook.mjs claude-code",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": ".*",
         "hooks": [
           {
             "type": "command",
-            "command": "node /Users/bharathkumar/Music/intentos-live/hooks/intentos-hook.mjs claude-code"
+            "command": "sh -c 'INTENTOS_REVIEW_POLL_BUDGET_MS=75000 node /Users/bharathkumar/Music/intentos-live/hooks/intentos-hook.mjs claude-code'",
+            "timeout": 90
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/bharathkumar/Music/intentos-live/hooks/intentos-hook.mjs claude-code",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/bharathkumar/Music/intentos-live/hooks/intentos-hook.mjs claude-code",
+            "timeout": 15
           }
         ]
       }

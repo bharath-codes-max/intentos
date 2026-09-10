@@ -32,7 +32,7 @@ export async function decisionsRoutes(app: FastifyInstance) {
 
     return sql`
       select d.id, d.tool_name, d.tool_input, d.decision, d.reason, d.latency_ms, d.created_at,
-             d.approval_status, d.reviewer, d.resolved_at,
+             d.approval_status, d.reviewer, d.resolved_at, d.project,
              t.label as agent_label, t.agent_type, p.rule_name as matched_rule, e.run_id
       from decisions d
       left join agent_tokens t on t.id = d.token_id

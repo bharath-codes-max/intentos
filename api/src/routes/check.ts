@@ -14,6 +14,18 @@ const CheckBody = z.object({
   provider: z.string().optional(),
   external_session_id: z.string().optional(),
   external_event_id: z.string().optional(),
+  // Repository/project identity resolved by the hook from `git remote`/`rev-parse` at the
+  // action's cwd — see hooks/project-identity.mjs. Optional and additive: a caller that
+  // omits it (or an older hook build) behaves exactly as before.
+  project: z
+    .object({
+      cwd: z.string().optional(),
+      repo_root: z.string().optional(),
+      remote_url: z.string().optional(),
+      normalized_repo: z.string().optional(),
+      branch: z.string().optional(),
+    })
+    .optional(),
 });
 
 const EXECUTION_STATUS_FOR: Record<Verdict, "denied" | "waiting_approval" | "attempted"> = {
@@ -57,12 +69,13 @@ export async function checkRoute(app: FastifyInstance) {
     // up still lands on a resolved (if late) approval rather than a silently-stuck pending one.
     const expiresAt = result.verdict === "review" ? sql`now() + interval '10 minutes'` : sql`null`;
 
+    const projectJson = call.project ? sql.json(JSON.parse(JSON.stringify(call.project))) : null;
     const [decisionRow] = await sql`
       insert into decisions
-        (org_id, token_id, tool_name, tool_input, decision, reason, matched_policy_id, latency_ms, approval_status, expires_at)
+        (org_id, token_id, tool_name, tool_input, decision, reason, matched_policy_id, latency_ms, approval_status, expires_at, project)
       values
         (${token.org_id}, ${token.id}, ${call.tool_name}, ${sql.json(JSON.parse(JSON.stringify(call.tool_input)))},
-         ${result.verdict}, ${result.reason}, ${result.matchedPolicyId}, ${latencyMs}, ${approvalStatus}, ${expiresAt})
+         ${result.verdict}, ${result.reason}, ${result.matchedPolicyId}, ${latencyMs}, ${approvalStatus}, ${expiresAt}, ${projectJson})
       returning id
     `;
 

@@ -136,3 +136,60 @@ create index if not exists idx_policies_org_active on policies(org_id, active);
 create index if not exists idx_policies_contract on policies(contract_id);
 create index if not exists idx_decisions_pending_review
   on decisions(org_id, approval_status) where approval_status = 'pending';
+
+-- Project/repository identity — so the same governed action is traceable to a specific
+-- repo regardless of which employee's machine or clone path it ran from. Populated by the
+-- hook from `git remote get-url origin` / `git rev-parse --show-toplevel`, normalized to
+-- host/owner/repo. Nullable: older rows and hosts without a hook-provided project both
+-- have no identity, which is a real, visible gap, not backfilled or guessed.
+alter table agent_runs add column if not exists metadata jsonb;
+alter table decisions add column if not exists project jsonb;
+create index if not exists idx_decisions_project_repo
+  on decisions using gin (project) where project is not null;
+
+-- Real user/employee identity, separate from the shared admin key and the org-selection
+-- cookie. One user belongs to one org (multi-org-per-user is a later scaling concern, not
+-- needed for a single-company onboarding flow).
+create table if not exists users (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references orgs(id) on delete cascade,
+  email text not null unique,
+  password_hash text not null,
+  created_at timestamptz not null default now()
+);
+
+-- Browser session, opaque bearer cookie hashed at rest, same pattern as agent_tokens.
+-- Revocable (logout / admin-initiated) and expiring, unlike the previous org-only cookie.
+create table if not exists sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references users(id) on delete cascade,
+  token_hash text not null unique,
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  revoked_at timestamptz
+);
+
+-- OAuth-2.0-device-authorization-grant-style handshake (RFC 8628 pattern): a CLI/hook
+-- installer that cannot receive a browser redirect starts a pending row here, a signed-in
+-- human approves it from the dashboard, and the installer polls until it can claim a
+-- one-time-delivered agent token. Nothing here is a permanent copy-pasted token — the human
+-- never sees or types the credential; the installer receives it directly over TLS.
+create table if not exists device_links (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid references orgs(id) on delete cascade,
+  device_code text not null unique,
+  user_code text not null unique,
+  agent_type text not null default 'claude-code',
+  hostname text,
+  status text not null default 'pending' check (status in ('pending', 'approved', 'denied', 'expired', 'claimed')),
+  user_id uuid references users(id) on delete set null,
+  agent_token_id uuid references agent_tokens(id) on delete set null,
+  pending_raw_token text,
+  created_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  approved_at timestamptz
+);
+
+create index if not exists idx_sessions_token on sessions(token_hash) where revoked_at is null;
+create index if not exists idx_device_links_device_code on device_links(device_code);
+create index if not exists idx_device_links_user_code on device_links(user_code);

@@ -6,6 +6,7 @@ import {
   CheckCircledIcon,
   ActivityLogIcon,
   CodeIcon,
+  Link2Icon,
 } from "@radix-ui/react-icons";
 
 export type NavItem = {
@@ -19,6 +20,7 @@ export type NavItem = {
 /** Always-visible, no section header — the two most-used destinations. */
 export const TOP_NAV: NavItem[] = [
   { href: "/", label: "Overview", icon: DashboardIcon, color: "#7FC6EC" },
+  { href: "/integrations", label: "Integrations", icon: Link2Icon, color: "#EE9A5C" },
   { href: "/agents", label: "Agents", icon: CubeIcon, color: "#B39CE8" },
 ];
 
