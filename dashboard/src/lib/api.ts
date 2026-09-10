@@ -194,7 +194,7 @@ export function createToken(input: { org_id: string; agent_type: string; label: 
 }
 
 export function revokeToken(id: string) {
-  return api<{ revoked: boolean }>(`/v1/tokens/${id}/revoke`, { method: "POST" });
+  return api<{ revoked: boolean }>(`/v1/tokens/${id}/revoke`, { method: "POST", body: "{}" });
 }
 
 export function compileIntent(input: { text: string; agent_type?: string }) {
@@ -368,7 +368,7 @@ export function getMe(token: string) {
 }
 
 export function logout(token: string) {
-  return userApi<{ signed_out: boolean }>(token, "/v1/auth/logout", { method: "POST" });
+  return userApi<{ signed_out: boolean }>(token, "/v1/auth/logout", { method: "POST", body: "{}" });
 }
 
 export interface DeviceLinkStatus {
@@ -415,7 +415,7 @@ export function getActiveInvite(token: string) {
 }
 
 export function regenerateInvite(token: string) {
-  return userApi<{ code: string; created_at: string }>(token, "/v1/invites/regenerate", { method: "POST" });
+  return userApi<{ code: string; created_at: string }>(token, "/v1/invites/regenerate", { method: "POST", body: "{}" });
 }
 
 export interface Employee {
@@ -432,7 +432,7 @@ export function listEmployees(token: string) {
 }
 
 export function revokeEmployee(token: string, id: string) {
-  return userApi<{ revoked: boolean }>(token, `/v1/employees/${id}/revoke`, { method: "POST" });
+  return userApi<{ revoked: boolean }>(token, `/v1/employees/${id}/revoke`, { method: "POST", body: "{}" });
 }
 
 // --- Per-device project scope (admin) and scope requests (employee -> admin approval) ---
