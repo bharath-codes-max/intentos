@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Org } from "@/lib/api";
-import { switchOrgAction } from "@/app/switch-org-action";
+import { switchOrgAction } from "@/app/(app)/switch-org-action";
 
 export function OrgSwitcher({
   orgs,
