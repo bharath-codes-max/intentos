@@ -347,6 +347,14 @@ export function login(input: { email: string; password: string }) {
   });
 }
 
+/** Admin-key authenticated — only called server-side, after the site password gate passes. */
+export function siteLogin() {
+  return api<{ user: AuthUser; session_token: string; expires_at: string }>("/v1/auth/site-login", {
+    method: "POST",
+    body: "{}",
+  });
+}
+
 export function getMe(token: string) {
   return userApi<AuthUser>(token, "/v1/auth/me");
 }

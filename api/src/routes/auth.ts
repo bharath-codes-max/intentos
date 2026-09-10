@@ -1,7 +1,9 @@
+import { randomBytes } from "node:crypto";
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { sql } from "../db/pool.js";
 import { createSession, hashPassword, verifyPassword, requireUser } from "../middleware/userAuth.js";
+import { requireAdmin } from "../middleware/adminAuth.js";
 
 const SignupBody = z.object({
   company_name: z.string().min(1),
@@ -41,6 +43,26 @@ export async function authRoutes(app: FastifyInstance) {
     const [user] = await sql`select id, org_id, email, password_hash from users where email = ${email}`;
     if (!user || !verifyPassword(password, user.password_hash)) {
       return reply.code(401).send({ error: "Invalid email or password" });
+    }
+    const [org] = await sql`select name from orgs where id = ${user.org_id}`;
+    const { rawToken, expiresAt } = await createSession(user.id);
+    return reply.send({ user: { id: user.id, email: user.email, org_id: user.org_id, org_name: org?.name ?? null }, session_token: rawToken, expires_at: expiresAt });
+  });
+
+  /** Behind the shared private-preview password gate, not a public endpoint — the dashboard
+   *  server calls this with the admin key after the visitor typed the site password, so a
+   *  single test company exists for everyone let in rather than asking each visitor to sign
+   *  up separately. Find-or-create is idempotent: repeat calls reuse the same org/user. */
+  app.post("/v1/auth/site-login", { preHandler: requireAdmin }, async (req, reply) => {
+    const email = "shared-preview@intentos.local";
+    let [user] = await sql`select id, org_id, email from users where email = ${email}`;
+    if (!user) {
+      const [org] = await sql`insert into orgs (name) values ('Intentos Preview') returning id, name`;
+      [user] = await sql`
+        insert into users (org_id, email, password_hash)
+        values (${org.id}, ${email}, ${hashPassword(randomBytes(24).toString("hex"))})
+        returning id, org_id, email
+      `;
     }
     const [org] = await sql`select name from orgs where id = ${user.org_id}`;
     const { rawToken, expiresAt } = await createSession(user.id);

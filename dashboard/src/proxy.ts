@@ -22,9 +22,9 @@ export function proxy(req: NextRequest) {
   }
   const session = req.cookies.get(SESSION_COOKIE)?.value;
   if (!session) {
-    const loginUrl = new URL("/login", req.url);
-    if (pathname !== "/") loginUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(loginUrl);
+    const enterUrl = new URL("/enter", req.url);
+    if (pathname !== "/") enterUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(enterUrl);
   }
   return NextResponse.next();
 }

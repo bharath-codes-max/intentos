@@ -12,10 +12,8 @@ export default async function EnterPage({
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-[28px] font-bold tracking-tight text-foreground">Private preview</h1>
-        <p className="mt-1.5 text-[14px] text-muted-foreground">
-          Intentos is in a private test right now. Enter the access password you were given.
-        </p>
+        <h1 className="text-[28px] font-bold tracking-tight text-foreground">Welcome back</h1>
+        <p className="mt-1.5 text-[14px] text-muted-foreground">Enter your access password to continue.</p>
       </div>
 
       {error && (
