@@ -85,10 +85,16 @@ export async function checkRoute(app: FastifyInstance) {
     if (scopeOverride) {
       result = scopeOverride;
     } else {
+      const projectKey = (call.project?.normalized_repo || call.project?.repo_root || call.project?.cwd || "").toLowerCase();
+      // A contract with a project_scope only governs actions whose project identity contains
+      // that text — same substring convention used everywhere else in this schema. A contract
+      // with no scope (every pre-existing one) stays org-wide, unaffected by this join.
       const policies = (await sql`
-        select id, rule_name, condition, action, priority, reason
-        from policies
-        where org_id = ${token.org_id} and active = true
+        select p.id, p.rule_name, p.condition, p.action, p.priority, p.reason
+        from policies p
+        left join intent_contracts c on c.id = p.contract_id
+        where p.org_id = ${token.org_id} and p.active = true
+          and (c.project_scope is null or ${projectKey} like '%' || lower(c.project_scope) || '%')
       `) as unknown as PolicyRow[];
       result = evaluate(call, policies);
     }

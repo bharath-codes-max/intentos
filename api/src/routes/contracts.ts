@@ -33,6 +33,9 @@ const CreateContractBody = z.object({
   name: z.string().min(1),
   natural_language: z.string().min(1),
   rules: z.array(RuleInput).min(1),
+  // When set, this contract only governs actions whose project identity contains this text —
+  // see check.ts. Omitted/null means org-wide, the existing default behavior.
+  project_scope: z.string().min(1).optional(),
 });
 
 const DEFAULT_PRIORITY: Record<"ALLOW" | "BLOCK" | "REVIEW", number> = {
@@ -47,12 +50,12 @@ export async function contractsRoutes(app: FastifyInstance) {
     if (!parsed.success) {
       return reply.code(400).send({ error: "Invalid request body", details: parsed.error.flatten() });
     }
-    const { org_id, agent_token_id, name, natural_language, rules } = parsed.data;
+    const { org_id, agent_token_id, name, natural_language, rules, project_scope } = parsed.data;
 
     const [contract] = await sql`
-      insert into intent_contracts (org_id, agent_token_id, name, natural_language, status, created_by)
-      values (${org_id}, ${agent_token_id ?? null}, ${name}, ${natural_language}, 'active', 'you@company.com')
-      returning id, name, status, created_at
+      insert into intent_contracts (org_id, agent_token_id, name, natural_language, status, created_by, project_scope)
+      values (${org_id}, ${agent_token_id ?? null}, ${name}, ${natural_language}, 'active', 'you@company.com', ${project_scope ?? null})
+      returning id, name, status, created_at, project_scope
     `;
 
     for (const rule of rules) {
@@ -73,7 +76,7 @@ export async function contractsRoutes(app: FastifyInstance) {
     const { org_id } = req.query as { org_id?: string };
     return sql`
       select
-        c.id, c.name, c.natural_language, c.status, c.created_at,
+        c.id, c.name, c.natural_language, c.status, c.created_at, c.project_scope,
         t.label as agent_label, t.agent_type,
         count(p.id) as rule_count,
         count(p.id) filter (where p.action = 'ALLOW') as allow_count,
@@ -91,7 +94,7 @@ export async function contractsRoutes(app: FastifyInstance) {
   app.get("/v1/contracts/:id", { preHandler: requireAdmin }, async (req, reply) => {
     const { id } = req.params as { id: string };
     const [contract] = await sql`
-      select c.id, c.name, c.natural_language, c.status, c.created_at, c.agent_token_id,
+      select c.id, c.name, c.natural_language, c.status, c.created_at, c.agent_token_id, c.project_scope,
              t.label as agent_label, t.agent_type
       from intent_contracts c
       left join agent_tokens t on t.id = c.agent_token_id

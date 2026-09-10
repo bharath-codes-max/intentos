@@ -13,7 +13,14 @@ const RequestBody = z.object({
   requested_action: z.enum(["include", "exclude"]),
 });
 
-const ResolveBody = z.object({ approved: z.boolean() });
+const ResolveBody = z.object({
+  approved: z.boolean(),
+  // Required when approving: which Intent Contract governs this folder. Approving without
+  // one would mean the folder is "in scope" but has no rules at all — every action there
+  // silently defaults to allow, which defeats the entire point of scoping it in the first
+  // place. Not required when denying.
+  contract_id: z.string().uuid().optional(),
+});
 
 export async function scopeRoutes(app: FastifyInstance) {
   /** Admin sets a device's scope directly — the fast path, no request/approval round trip needed. */
@@ -74,13 +81,31 @@ export async function scopeRoutes(app: FastifyInstance) {
     const parsed = ResolveBody.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: "Invalid request body" });
 
+    const [pending] = await sql`
+      select id, agent_token_id, project_identifier, requested_action
+      from scope_requests where id = ${id} and org_id = ${admin.org_id} and status = 'pending'
+    `;
+    if (!pending) return reply.code(404).send({ error: "No pending scope request with that id" });
+
+    // Approving an "include" without a contract would put the folder in scope with zero
+    // rules attached — everything in it would silently default-allow, defeating the point
+    // of scoping it at all. "exclude" approvals don't need one: excluding only removes
+    // governance, it never needs new rules to do that.
+    if (parsed.data.approved && pending.requested_action === "include" && !parsed.data.contract_id) {
+      return reply.code(400).send({ error: "Approving an include request requires selecting an Intent Contract to govern that folder." });
+    }
+    if (parsed.data.contract_id) {
+      const [contract] = await sql`select id from intent_contracts where id = ${parsed.data.contract_id} and org_id = ${admin.org_id}`;
+      if (!contract) return reply.code(404).send({ error: "No contract with that id in your company" });
+    }
+
     const [request] = await sql`
       update scope_requests
       set status = ${parsed.data.approved ? "approved" : "denied"}, resolved_at = now(), resolved_by_email = ${admin.email}
-      where id = ${id} and org_id = ${admin.org_id} and status = 'pending'
+      where id = ${id} and status = 'pending'
       returning id, agent_token_id, project_identifier, requested_action
     `;
-    if (!request) return reply.code(404).send({ error: "No pending scope request with that id" });
+    if (!request) return reply.code(409).send({ error: "This request was already resolved" });
 
     if (parsed.data.approved) {
       const mode = request.requested_action === "include" ? "include_only" : "exclude";
@@ -95,6 +120,9 @@ export async function scopeRoutes(app: FastifyInstance) {
       await sql`
         update agent_tokens set scope_mode = ${nextMode}, scope_projects = ${nextProjects} where id = ${request.agent_token_id}
       `;
+      if (parsed.data.contract_id) {
+        await sql`update intent_contracts set project_scope = ${request.project_identifier} where id = ${parsed.data.contract_id}`;
+      }
     }
     return reply.send({ resolved: true });
   });

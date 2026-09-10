@@ -19,9 +19,9 @@ export async function revokeEmployeeAction(id: string) {
   revalidatePath("/employees");
 }
 
-export async function resolveScopeRequestAction(id: string, approved: boolean) {
+export async function resolveScopeRequestAction(id: string, approved: boolean, contractId?: string) {
   const token = await getSessionToken();
   if (!token) redirect("/enter");
-  await resolveScopeRequest(token, id, approved);
+  await resolveScopeRequest(token, id, approved, contractId);
   revalidatePath("/employees");
 }

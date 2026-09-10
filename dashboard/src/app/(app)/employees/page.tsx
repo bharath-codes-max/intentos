@@ -3,8 +3,9 @@ import { redirect } from "next/navigation";
 import { PersonIcon } from "@radix-ui/react-icons";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent } from "@/components/ui/card";
-import { listEmployees, getActiveInvite, listScopeRequests } from "@/lib/api";
+import { listEmployees, getActiveInvite, listScopeRequests, listContracts } from "@/lib/api";
 import { getSessionToken, getRole } from "@/lib/current-session";
+import { getCurrentOrgId } from "@/lib/current-org";
 import { InviteLinkCard } from "./invite-link-card";
 import { EmployeesTable } from "./employees-table";
 import { ScopeRequestsPanel } from "./scope-requests-panel";
@@ -15,11 +16,14 @@ export default async function EmployeesPage() {
   if (!token) redirect("/enter");
   if (role !== "admin") redirect("/employee");
 
-  const [employees, invite, scopeRequests] = await Promise.all([
+  const orgId = await getCurrentOrgId();
+  const [employees, invite, scopeRequests, contracts] = await Promise.all([
     listEmployees(token),
     getActiveInvite(token),
     listScopeRequests(token),
+    listContracts(orgId),
   ]);
+  const activeContracts = contracts.filter((c) => c.status === "active");
 
   const h = await headers();
   const host = h.get("host") ?? "localhost:3000";
@@ -44,7 +48,7 @@ export default async function EmployeesPage() {
       {scopeRequests.length > 0 && (
         <Card>
           <CardContent className="pt-6">
-            <ScopeRequestsPanel requests={scopeRequests} />
+            <ScopeRequestsPanel requests={scopeRequests} contracts={activeContracts} />
           </CardContent>
         </Card>
       )}

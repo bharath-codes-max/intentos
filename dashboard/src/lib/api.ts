@@ -95,6 +95,7 @@ export interface Contract {
   allow_count: string;
   review_count: string;
   block_count: string;
+  project_scope: string | null;
 }
 
 export interface ContractDetail extends Contract {
@@ -467,9 +468,9 @@ export function listScopeRequests(token: string) {
   return userApi<ScopeRequest[]>(token, "/v1/scope-requests");
 }
 
-export function resolveScopeRequest(token: string, id: string, approved: boolean) {
+export function resolveScopeRequest(token: string, id: string, approved: boolean, contractId?: string) {
   return userApi<{ resolved: boolean }>(token, `/v1/scope-requests/${id}/resolve`, {
     method: "POST",
-    body: JSON.stringify({ approved }),
+    body: JSON.stringify({ approved, contract_id: contractId }),
   });
 }

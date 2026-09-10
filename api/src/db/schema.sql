@@ -259,4 +259,11 @@ create table if not exists scope_requests (
 
 create index if not exists idx_scope_requests_org_status on scope_requests(org_id, status);
 
+-- When set, this contract's rules only apply to actions whose project identity matches this
+-- text (same substring-match convention as everywhere else) — e.g. "payments-api" or
+-- "github.com/acme/payments-api". Null (the default, and every pre-existing contract) means
+-- org-wide, exactly the current behavior — this is purely additive, nothing already active
+-- changes scope by having this column added.
+alter table intent_contracts add column if not exists project_scope text;
+
 create index if not exists idx_org_invites_code on org_invites(code) where revoked_at is null;
