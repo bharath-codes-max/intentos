@@ -2,24 +2,23 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { signup } from "@/lib/api";
+import { join } from "@/lib/api";
 import { ORG_COOKIE } from "@/lib/current-org";
 import { SESSION_COOKIE, ROLE_COOKIE } from "@/lib/current-session";
 
-export async function signupAction(formData: FormData) {
-  const company_name = String(formData.get("company_name") ?? "").trim();
+export async function joinAction(formData: FormData) {
+  const code = String(formData.get("code") ?? "");
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  if (!company_name || !email || !password) {
-    throw new Error("Company name, email, and password are required");
-  }
+  if (!email || !password) throw new Error("Email and password are required");
 
   let result;
   try {
-    result = await signup({ company_name, email, password });
+    result = await join({ code, email, password });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Signup failed";
-    redirect(`/signup?error=${encodeURIComponent(message.includes("409") ? "That email is already registered" : "Signup failed")}`);
+    const message = err instanceof Error ? err.message : "Could not join";
+    const reason = message.includes("409") ? "That email is already registered" : message.includes("404") ? "This invite link is invalid or has been revoked" : "Could not join";
+    redirect(`/join/${code}?error=${encodeURIComponent(reason)}`);
   }
 
   const store = await cookies();
@@ -37,5 +36,5 @@ export async function signupAction(formData: FormData) {
     expires: new Date(result.expires_at),
   });
 
-  redirect("/integrations?welcome=1");
+  redirect("/employee");
 }

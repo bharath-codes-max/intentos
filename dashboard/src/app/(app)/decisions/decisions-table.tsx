@@ -51,6 +51,7 @@ export function DecisionsTable({ decisions }: { decisions: Decision[] }) {
   const [selected, setSelected] = useState<Decision | null>(null);
   const [decisionFilter, setDecisionFilter] = useState<DecisionFilter>("all");
   const [agentFilter, setAgentFilter] = useState<string>("all");
+  const [employeeFilter, setEmployeeFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
@@ -65,11 +66,18 @@ export function DecisionsTable({ decisions }: { decisions: Decision[] }) {
     return [...set].sort();
   }, [decisions]);
 
+  const employees = useMemo(() => {
+    const set = new Set<string>();
+    for (const d of decisions) if (d.employee_email) set.add(d.employee_email);
+    return [...set].sort();
+  }, [decisions]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const rows = decisions.filter((d) => {
       if (decisionFilter !== "all" && d.decision !== decisionFilter) return false;
       if (agentFilter !== "all" && d.agent_label !== agentFilter) return false;
+      if (employeeFilter !== "all" && d.employee_email !== employeeFilter) return false;
       if (!q) return true;
       return (
         d.tool_name.toLowerCase().includes(q) ||
@@ -82,7 +90,7 @@ export function DecisionsTable({ decisions }: { decisions: Decision[] }) {
       const diff = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       return sortDir === "asc" ? diff : -diff;
     });
-  }, [decisions, decisionFilter, agentFilter, search, sortDir]);
+  }, [decisions, decisionFilter, agentFilter, employeeFilter, search, sortDir]);
 
   const grouped = decisionFilter === "all";
 
@@ -108,6 +116,7 @@ export function DecisionsTable({ decisions }: { decisions: Decision[] }) {
         <p className="truncate text-[13px] font-medium text-foreground">{d.reason}</p>
         <p className="mt-0.5 truncate font-mono text-[12px] text-muted-foreground">
           {d.tool_name} · {d.agent_label ?? "Unknown agent"}
+          {d.employee_email && <> · {d.employee_email}</>}
         </p>
       </DataRow>
     );
@@ -146,6 +155,21 @@ export function DecisionsTable({ decisions }: { decisions: Decision[] }) {
               {agents.map((a) => (
                 <SelectItem key={a} value={a}>
                   {a}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        {employees.length > 0 && (
+          <Select value={employeeFilter} onValueChange={setEmployeeFilter}>
+            <SelectTrigger size="sm">
+              <SelectValue>{employeeFilter === "all" ? "All employees" : employeeFilter}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All employees</SelectItem>
+              {employees.map((e) => (
+                <SelectItem key={e} value={e}>
+                  {e}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -202,6 +226,7 @@ export function DecisionsTable({ decisions }: { decisions: Decision[] }) {
                   <span className="text-[12.5px] text-muted-foreground">{formatTime(selected.created_at)}</span>
                 </div>
 
+                <Field label="Employee">{selected.employee_email ?? "—"}</Field>
                 <Field label="Agent">{selected.agent_label ?? "—"}</Field>
                 <Field label="Tool">
                   <Code>{selected.tool_name}</Code>

@@ -72,10 +72,10 @@ export async function checkRoute(app: FastifyInstance) {
     const projectJson = call.project ? sql.json(JSON.parse(JSON.stringify(call.project))) : null;
     const [decisionRow] = await sql`
       insert into decisions
-        (org_id, token_id, tool_name, tool_input, decision, reason, matched_policy_id, latency_ms, approval_status, expires_at, project)
+        (org_id, token_id, tool_name, tool_input, decision, reason, matched_policy_id, latency_ms, approval_status, expires_at, project, employee_email)
       values
         (${token.org_id}, ${token.id}, ${call.tool_name}, ${sql.json(JSON.parse(JSON.stringify(call.tool_input)))},
-         ${result.verdict}, ${result.reason}, ${result.matchedPolicyId}, ${latencyMs}, ${approvalStatus}, ${expiresAt}, ${projectJson})
+         ${result.verdict}, ${result.reason}, ${result.matchedPolicyId}, ${latencyMs}, ${approvalStatus}, ${expiresAt}, ${projectJson}, ${token.owner_email})
       returning id
     `;
 
@@ -88,6 +88,7 @@ export async function checkRoute(app: FastifyInstance) {
         await recordActivity({
           orgId: token.org_id,
           agentTokenId: token.id,
+          employeeEmail: token.owner_email,
           provider: call.provider,
           externalSessionId: call.external_session_id,
           externalEventId: call.external_event_id ?? null,
@@ -108,6 +109,7 @@ export async function checkRoute(app: FastifyInstance) {
 async function recordActivity(input: {
   orgId: string;
   agentTokenId: string;
+  employeeEmail: string | null;
   provider: string;
   externalSessionId: string;
   externalEventId: string | null;
@@ -123,8 +125,8 @@ async function recordActivity(input: {
   `;
   if (!run) {
     [run] = await sql`
-      insert into agent_runs (org_id, agent_token_id, provider, external_session_id, status)
-      values (${input.orgId}, ${input.agentTokenId}, ${input.provider}, ${input.externalSessionId}, 'running')
+      insert into agent_runs (org_id, agent_token_id, provider, external_session_id, status, employee_email)
+      values (${input.orgId}, ${input.agentTokenId}, ${input.provider}, ${input.externalSessionId}, 'running', ${input.employeeEmail})
       returning id, activity_count
     `;
   }
@@ -136,11 +138,11 @@ async function recordActivity(input: {
   await sql`
     insert into activity_events
       (org_id, run_id, agent_token_id, provider, external_event_id, sequence_number, event_type, category,
-       tool, action, resource, context, decision_id, decision, execution_status, "timestamp")
+       tool, action, resource, context, decision_id, decision, execution_status, "timestamp", employee_email)
     values
       (${input.orgId}, ${run.id}, ${input.agentTokenId}, ${input.provider}, ${input.externalEventId},
        ${run.activity_count + 1}, 'PreToolUse', ${category}, ${input.toolName}, ${action}, ${sanitizedResource},
-       ${sql.json(JSON.parse(JSON.stringify(sanitizedContext)))}, ${input.decisionId}, ${input.verdict}, ${EXECUTION_STATUS_FOR[input.verdict]}, now())
+       ${sql.json(JSON.parse(JSON.stringify(sanitizedContext)))}, ${input.decisionId}, ${input.verdict}, ${EXECUTION_STATUS_FOR[input.verdict]}, now(), ${input.employeeEmail})
   `;
 
   if (input.verdict === "allow") {

@@ -27,18 +27,19 @@ export async function decisionsRoutes(app: FastifyInstance) {
   });
 
   app.get("/v1/decisions", { preHandler: requireAdmin }, async (req) => {
-    const { org_id, limit } = req.query as { org_id?: string; limit?: string };
+    const { org_id, limit, employee_email } = req.query as { org_id?: string; limit?: string; employee_email?: string };
     const take = Math.min(Number(limit) || 50, 200);
 
     return sql`
       select d.id, d.tool_name, d.tool_input, d.decision, d.reason, d.latency_ms, d.created_at,
-             d.approval_status, d.reviewer, d.resolved_at, d.project,
+             d.approval_status, d.reviewer, d.resolved_at, d.project, d.employee_email,
              t.label as agent_label, t.agent_type, p.rule_name as matched_rule, e.run_id
       from decisions d
       left join agent_tokens t on t.id = d.token_id
       left join policies p on p.id = d.matched_policy_id
       left join activity_events e on e.decision_id = d.id
       where d.org_id = ${org_id ?? null}
+        and (${employee_email ?? null}::text is null or d.employee_email = ${employee_email ?? null})
       order by d.created_at desc
       limit ${take}
     `;

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { checkSitePassword, GATE_COOKIE } from "@/lib/site-gate";
 import { siteLogin } from "@/lib/api";
 import { ORG_COOKIE } from "@/lib/current-org";
-import { SESSION_COOKIE } from "@/lib/current-session";
+import { SESSION_COOKIE, ROLE_COOKIE } from "@/lib/current-session";
 
 export async function enterAction(formData: FormData) {
   const password = String(formData.get("password") ?? "");
@@ -31,6 +31,12 @@ export async function enterAction(formData: FormData) {
     expires: new Date(result.expires_at),
   });
   store.set(ORG_COOKIE, result.user.org_id, { httpOnly: true, sameSite: "lax", path: "/" });
+  store.set(ROLE_COOKIE, result.user.role, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    expires: new Date(result.expires_at),
+  });
 
   redirect(next === "/login" || next === "/signup" ? "/integrations" : next);
 }

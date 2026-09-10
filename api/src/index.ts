@@ -13,6 +13,8 @@ import { runsRoutes } from "./routes/runs.js";
 import { activityRoutes } from "./routes/activity.js";
 import { authRoutes } from "./routes/auth.js";
 import { devicesRoutes } from "./routes/devices.js";
+import { invitesRoutes } from "./routes/invites.js";
+import { employeesRoutes } from "./routes/employees.js";
 
 const app = Fastify({
   logger: {
@@ -51,6 +53,8 @@ await app.register(runsRoutes);
 await app.register(activityRoutes);
 await app.register(authRoutes);
 await app.register(devicesRoutes);
+await app.register(invitesRoutes);
+await app.register(employeesRoutes);
 
 app.get("/health", async () => ({ status: "ok" }));
 

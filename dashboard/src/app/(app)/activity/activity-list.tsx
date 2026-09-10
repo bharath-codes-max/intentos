@@ -41,6 +41,7 @@ const STATUS_LABEL: Record<string, string> = {
 export function ActivityList({ runs }: { runs: AgentRun[] }) {
   const [status, setStatus] = useState<StatusFilter>("all");
   const [agent, setAgent] = useState<string>("all");
+  const [employee, setEmployee] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
@@ -56,11 +57,18 @@ export function ActivityList({ runs }: { runs: AgentRun[] }) {
     return [...set].sort();
   }, [runs]);
 
+  const employees = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of runs) if (r.employee_email) set.add(r.employee_email);
+    return [...set].sort();
+  }, [runs]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const rows = runs.filter((r) => {
       if (status !== "all" && r.status !== status) return false;
       if (agent !== "all" && r.agent_label !== agent) return false;
+      if (employee !== "all" && r.employee_email !== employee) return false;
       if (q && !(r.task_summary ?? "").toLowerCase().includes(q)) return false;
       return true;
     });
@@ -68,7 +76,7 @@ export function ActivityList({ runs }: { runs: AgentRun[] }) {
       const diff = new Date(a.started_at).getTime() - new Date(b.started_at).getTime();
       return sortDir === "asc" ? diff : -diff;
     });
-  }, [runs, status, agent, search, sortDir]);
+  }, [runs, status, agent, employee, search, sortDir]);
 
   const grouped = status === "all";
 
@@ -97,7 +105,8 @@ export function ActivityList({ runs }: { runs: AgentRun[] }) {
       >
         <p className="truncate text-[13px] font-medium text-foreground">{run.task_summary ?? "Untitled run"}</p>
         <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
-          {run.agent_label ?? run.provider} ·{" "}
+          {run.agent_label ?? run.provider}
+          {run.employee_email && <> · {run.employee_email}</>} ·{" "}
           {new Date(run.started_at).toLocaleString(undefined, {
             month: "short",
             day: "numeric",
@@ -145,6 +154,21 @@ export function ActivityList({ runs }: { runs: AgentRun[] }) {
               {agents.map((a) => (
                 <SelectItem key={a} value={a}>
                   {a}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+        {employees.length > 0 && (
+          <Select value={employee} onValueChange={setEmployee}>
+            <SelectTrigger size="sm">
+              <SelectValue>{employee === "all" ? "All employees" : employee}</SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All employees</SelectItem>
+              {employees.map((e) => (
+                <SelectItem key={e} value={e}>
+                  {e}
                 </SelectItem>
               ))}
             </SelectContent>

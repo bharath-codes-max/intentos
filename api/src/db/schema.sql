@@ -193,3 +193,40 @@ create table if not exists device_links (
 create index if not exists idx_sessions_token on sessions(token_hash) where revoked_at is null;
 create index if not exists idx_device_links_device_code on device_links(device_code);
 create index if not exists idx_device_links_user_code on device_links(user_code);
+
+-- Admin vs Employee. The org creator (signup) is always 'admin'; everyone who joins via an
+-- invite link is 'employee'. Enforced both in the dashboard's routing and on the API routes
+-- below — never UI-only.
+alter table users add column if not exists role text not null default 'admin' check (role in ('admin', 'employee'));
+
+-- Which signed-in human's device this token belongs to, set once at device-approval time.
+-- Lets every governed action be attributed back to a real employee, not just "some token
+-- in this org" — the whole point of the multi-employee identity requirement.
+alter table agent_tokens add column if not exists owner_user_id uuid references users(id) on delete set null;
+alter table agent_tokens add column if not exists owner_email text;
+
+-- Denormalized employee email snapshot on every governed record, same pattern as the
+-- existing `project jsonb` snapshot on decisions — written once at check time so historical
+-- rows stay attributable even if the user is later removed, and so Decisions/Approvals/
+-- Activity never need an extra join just to show "who did this."
+alter table decisions add column if not exists employee_email text;
+alter table activity_events add column if not exists employee_email text;
+alter table agent_runs add column if not exists employee_email text;
+
+create index if not exists idx_decisions_employee on decisions(org_id, employee_email);
+create index if not exists idx_activity_events_employee on activity_events(org_id, employee_email);
+
+-- A reusable, admin-generated link (github/slack-style single workspace-invite link, not
+-- one-per-person) that lets any number of employees join the same org, each authenticating
+-- with their OWN work email — the invite code only identifies which company to join, it is
+-- never itself a credential for any specific person.
+create table if not exists org_invites (
+  id uuid primary key default gen_random_uuid(),
+  org_id uuid not null references orgs(id) on delete cascade,
+  code text not null unique,
+  created_by uuid references users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  revoked_at timestamptz
+);
+
+create index if not exists idx_org_invites_code on org_invites(code) where revoked_at is null;

@@ -34,6 +34,7 @@ function timeAgo(iso: string): string {
 
 export function PendingApprovals({ pending }: { pending: PendingApproval[] }) {
   const [agent, setAgent] = useState<string>("all");
+  const [employee, setEmployee] = useState<string>("all");
   const [search, setSearch] = useState("");
 
   const agents = useMemo(() => {
@@ -42,14 +43,21 @@ export function PendingApprovals({ pending }: { pending: PendingApproval[] }) {
     return [...set].sort();
   }, [pending]);
 
+  const employees = useMemo(() => {
+    const set = new Set<string>();
+    for (const a of pending) if (a.employee_email) set.add(a.employee_email);
+    return [...set].sort();
+  }, [pending]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return pending.filter((a) => {
       if (agent !== "all" && a.agent_label !== agent) return false;
+      if (employee !== "all" && a.employee_email !== employee) return false;
       if (!q) return true;
       return a.tool_name.toLowerCase().includes(q) || a.reason.toLowerCase().includes(q);
     });
-  }, [pending, agent, search]);
+  }, [pending, agent, employee, search]);
 
   return (
     <div className="space-y-2">
@@ -66,6 +74,21 @@ export function PendingApprovals({ pending }: { pending: PendingApproval[] }) {
                 {agents.map((a) => (
                   <SelectItem key={a} value={a}>
                     {a}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {employees.length > 1 && (
+            <Select value={employee} onValueChange={setEmployee}>
+              <SelectTrigger size="sm">
+                <SelectValue>{employee === "all" ? "All employees" : employee}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All employees</SelectItem>
+                {employees.map((e) => (
+                  <SelectItem key={e} value={e}>
+                    {e}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -97,7 +120,7 @@ export function PendingApprovals({ pending }: { pending: PendingApproval[] }) {
               }
             >
               <p className="truncate text-[13px] font-medium text-foreground">
-                {a.agent_label ?? "Unknown agent"}
+                {a.employee_email ?? a.agent_label ?? "Unknown agent"}
                 <span className="text-muted-foreground"> requested </span>
                 <Code>{a.tool_name}</Code>
               </p>
@@ -155,6 +178,7 @@ export function ResolvedApprovals({ resolved }: { resolved: ResolvedApproval[] }
         <p className="truncate text-[13px] font-medium text-foreground">{r.reason}</p>
         <p className="mt-0.5 truncate font-mono text-[12px] text-muted-foreground">
           {r.tool_name} · {r.agent_label ?? "Unknown agent"}
+          {r.employee_email && <> · {r.employee_email}</>}
         </p>
       </DataRow>
     );

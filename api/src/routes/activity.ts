@@ -54,7 +54,7 @@ export async function activityRoutes(app: FastifyInstance) {
     return sql`
       select e.id, e.run_id, e.sequence_number, e.event_type, e.category, e.tool, e.action, e.resource, e.target,
              e.environment, e.decision, e.execution_status, e.result_summary, e.error_summary, e."timestamp",
-             r.task_summary, t.label as agent_label
+             e.employee_email, r.task_summary, t.label as agent_label
       from activity_events e
       join agent_runs r on r.id = e.run_id
       left join agent_tokens t on t.id = e.agent_token_id

@@ -7,6 +7,7 @@ import {
   ActivityLogIcon,
   CodeIcon,
   Link2Icon,
+  PersonIcon,
 } from "@radix-ui/react-icons";
 
 export type NavItem = {
@@ -22,6 +23,7 @@ export const TOP_NAV: NavItem[] = [
   { href: "/", label: "Overview", icon: DashboardIcon, color: "#7FC6EC" },
   { href: "/integrations", label: "Integrations", icon: Link2Icon, color: "#EE9A5C" },
   { href: "/agents", label: "Agents", icon: CubeIcon, color: "#B39CE8" },
+  { href: "/employees", label: "Employees", icon: PersonIcon, color: "#F2A5C4" },
 ];
 
 /** Collapsible "Governance" section. */

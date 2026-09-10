@@ -61,6 +61,7 @@ export interface Decision {
   reviewer: string | null;
   resolved_at: string | null;
   run_id?: string | null;
+  employee_email: string | null;
 }
 
 export type Condition = { field: string; op: string; value: string };
@@ -109,6 +110,7 @@ export interface PendingApproval {
   agent_label: string | null;
   agent_type: string | null;
   matched_rule: string | null;
+  employee_email: string | null;
 }
 
 export interface ResolvedApproval {
@@ -120,6 +122,7 @@ export interface ResolvedApproval {
   reviewer: string;
   resolved_at: string;
   agent_label: string | null;
+  employee_email: string | null;
 }
 
 export interface DecisionSummary {
@@ -135,6 +138,7 @@ export interface AgentToken {
   label: string;
   created_at: string;
   revoked_at: string | null;
+  owner_email: string | null;
 }
 
 export interface Org {
@@ -260,6 +264,7 @@ export interface AgentRun {
   block_count: number;
   error_count: number;
   agent_label: string | null;
+  employee_email?: string | null;
 }
 
 export interface ActivityEvent {
@@ -284,6 +289,7 @@ export interface ActivityEvent {
   timestamp: string;
   task_summary?: string | null;
   agent_label?: string | null;
+  employee_email?: string | null;
 }
 
 export interface RunDetail extends AgentRun {
@@ -331,6 +337,7 @@ export interface AuthUser {
   email: string;
   org_id: string;
   org_name: string | null;
+  role: "admin" | "employee";
 }
 
 export function signup(input: { company_name: string; email: string; password: string }) {
@@ -387,4 +394,42 @@ export function denyDevice(token: string, userCode: string) {
     method: "POST",
     body: JSON.stringify({ user_code: userCode }),
   });
+}
+
+// --- Employee invitations & roster (admin only, session-authenticated) ---
+
+export function join(input: { code: string; email: string; password: string }) {
+  return publicApi<{ user: AuthUser; session_token: string; expires_at: string }>("/v1/auth/join", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function getInvitePreview(code: string) {
+  return publicApi<{ org_name: string }>(`/v1/invites/${encodeURIComponent(code)}`);
+}
+
+export function getActiveInvite(token: string) {
+  return userApi<{ code: string; created_at: string }>(token, "/v1/invites/active");
+}
+
+export function regenerateInvite(token: string) {
+  return userApi<{ code: string; created_at: string }>(token, "/v1/invites/regenerate", { method: "POST" });
+}
+
+export interface Employee {
+  id: string;
+  email: string;
+  role: "admin" | "employee";
+  created_at: string;
+  connected_devices: string;
+  last_activity_at: string | null;
+}
+
+export function listEmployees(token: string) {
+  return userApi<Employee[]>(token, "/v1/employees");
+}
+
+export function revokeEmployee(token: string, id: string) {
+  return userApi<{ revoked: boolean }>(token, `/v1/employees/${id}/revoke`, { method: "POST" });
 }

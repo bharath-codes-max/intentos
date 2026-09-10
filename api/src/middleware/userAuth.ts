@@ -31,7 +31,7 @@ export async function createSession(userId: string) {
 
 export async function resolveSession(rawToken: string) {
   const rows = await sql`
-    select s.id as session_id, u.id as user_id, u.org_id, u.email
+    select s.id as session_id, u.id as user_id, u.org_id, u.email, u.role
     from sessions s
     join users u on u.id = s.user_id
     where s.token_hash = ${hashToken(rawToken)}
@@ -59,5 +59,17 @@ export async function requireUser(req: FastifyRequest, reply: FastifyReply) {
   if (!raw) return reply.code(401).send({ error: "Not signed in" });
   const session = await resolveSession(raw);
   if (!session) return reply.code(401).send({ error: "Session invalid or expired" });
+  (req as FastifyRequest & { user: typeof session }).user = session;
+}
+
+/** Requires a signed-in human with the 'admin' role in their org — company-wide data
+ *  (employees, all decisions, policies) is admin-only, enforced here at the API layer so
+ *  hiding a UI link is never the only thing standing between an employee and this data. */
+export async function requireOrgAdmin(req: FastifyRequest, reply: FastifyReply) {
+  const raw = bearerFrom(req);
+  if (!raw) return reply.code(401).send({ error: "Not signed in" });
+  const session = await resolveSession(raw);
+  if (!session) return reply.code(401).send({ error: "Session invalid or expired" });
+  if (session.role !== "admin") return reply.code(403).send({ error: "Admin role required" });
   (req as FastifyRequest & { user: typeof session }).user = session;
 }

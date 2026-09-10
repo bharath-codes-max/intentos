@@ -34,7 +34,7 @@ export async function tokensRoutes(app: FastifyInstance) {
   app.get("/v1/tokens", { preHandler: requireAdmin }, async (req) => {
     const orgId = (req.query as { org_id?: string }).org_id;
     return sql`
-      select id, agent_type, label, created_at, revoked_at
+      select id, agent_type, label, created_at, revoked_at, owner_email
       from agent_tokens
       where org_id = ${orgId ?? null}
       order by created_at desc

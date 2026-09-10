@@ -11,15 +11,16 @@ const ResolveBody = z.object({
 export async function approvalsRoutes(app: FastifyInstance) {
   /** Every action currently paused pending a human decision — REVIEW never silently becomes ALLOW. */
   app.get("/v1/approvals", { preHandler: requireAdmin }, async (req) => {
-    const { org_id } = req.query as { org_id?: string };
+    const { org_id, employee_email } = req.query as { org_id?: string; employee_email?: string };
     return sql`
-      select d.id, d.tool_name, d.tool_input, d.reason, d.created_at, d.project,
+      select d.id, d.tool_name, d.tool_input, d.reason, d.created_at, d.project, d.employee_email,
              t.label as agent_label, t.agent_type, p.rule_name as matched_rule
       from decisions d
       left join agent_tokens t on t.id = d.token_id
       left join policies p on p.id = d.matched_policy_id
       where d.org_id = ${org_id ?? null} and d.decision = 'review' and d.approval_status = 'pending'
         and (d.expires_at is null or d.expires_at > now())
+        and (${employee_email ?? null}::text is null or d.employee_email = ${employee_email ?? null})
       order by d.created_at asc
     `;
   });
@@ -28,7 +29,7 @@ export async function approvalsRoutes(app: FastifyInstance) {
     const { org_id, limit } = req.query as { org_id?: string; limit?: string };
     const take = Math.min(Number(limit) || 50, 200);
     return sql`
-      select d.id, d.tool_name, d.tool_input, d.reason, d.approval_status, d.reviewer, d.resolved_at,
+      select d.id, d.tool_name, d.tool_input, d.reason, d.approval_status, d.reviewer, d.resolved_at, d.employee_email,
              t.label as agent_label
       from decisions d
       left join agent_tokens t on t.id = d.token_id

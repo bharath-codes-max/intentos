@@ -47,8 +47,8 @@ export async function runsRoutes(app: FastifyInstance) {
 
     const metadata = parsed.data.metadata ? sql.json(JSON.parse(JSON.stringify(parsed.data.metadata))) : null;
     const [run] = await sql`
-      insert into agent_runs (org_id, agent_token_id, provider, external_session_id, status, metadata)
-      values (${token.org_id}, ${token.id}, ${provider}, ${external_session_id}, 'running', ${metadata})
+      insert into agent_runs (org_id, agent_token_id, provider, external_session_id, status, metadata, employee_email)
+      values (${token.org_id}, ${token.id}, ${provider}, ${external_session_id}, 'running', ${metadata}, ${token.owner_email})
       returning id, status
     `;
     return reply.code(201).send(run);
@@ -93,14 +93,15 @@ export async function runsRoutes(app: FastifyInstance) {
   });
 
   app.get("/v1/runs", { preHandler: requireAdmin }, async (req) => {
-    const { org_id } = req.query as { org_id?: string };
+    const { org_id, employee_email } = req.query as { org_id?: string; employee_email?: string };
     return sql`
       select r.id, r.provider, r.external_session_id, r.task_summary, r.task_source, r.status,
              r.started_at, r.ended_at, r.activity_count, r.allow_count, r.review_count, r.block_count, r.error_count,
-             t.label as agent_label
+             t.label as agent_label, r.employee_email
       from agent_runs r
       left join agent_tokens t on t.id = r.agent_token_id
       where r.org_id = ${org_id ?? null}
+        and (${employee_email ?? null}::text is null or r.employee_email = ${employee_email ?? null})
       order by r.started_at desc
     `;
   });

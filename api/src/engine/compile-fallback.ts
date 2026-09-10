@@ -342,7 +342,7 @@ export function fixPushMainConditions(rules: CompiledRule[], domain: string): Co
 const WRITE_TAGGED_ACTIONS = /modify|edit|write|deploy/i;
 const READ_ONLY_VERBS = [
   "cat ", "sed -n", "head ", "tail ", "less ", "more ", "grep ", "awk ", "wc ", "stat ", "file ",
-  "git show ", "git diff ", "git log ", "git cat-file", "git blame ",
+  "git show ", "git diff ", "git log ", "git cat-file", "git blame ", "echo ", "find ", "ls ",
 ];
 
 /**

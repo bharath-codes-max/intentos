@@ -68,7 +68,7 @@ export async function devicesRoutes(app: FastifyInstance) {
   app.post("/v1/devices/approve", { preHandler: requireUser }, async (req, reply) => {
     const parsed = ApproveBody.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: "Invalid request body", details: parsed.error.flatten() });
-    const user = (req as typeof req & { user: { org_id: string } }).user;
+    const user = (req as typeof req & { user: { org_id: string; user_id: string; email: string } }).user;
     const code = parsed.data.user_code.toUpperCase();
 
     const [pending] = await sql`
@@ -84,13 +84,13 @@ export async function devicesRoutes(app: FastifyInstance) {
     const rawToken = `sk-${pending.agent_type}-${randomBytes(16).toString("hex")}`;
     const label = pending.hostname ? `${pending.agent_type} — ${pending.hostname}` : `${pending.agent_type} — device`;
     const [token] = await sql`
-      insert into agent_tokens (org_id, token_hash, agent_type, label)
-      values (${user.org_id}, ${hashToken(rawToken)}, ${pending.agent_type}, ${label})
+      insert into agent_tokens (org_id, token_hash, agent_type, label, owner_user_id, owner_email)
+      values (${user.org_id}, ${hashToken(rawToken)}, ${pending.agent_type}, ${label}, ${user.user_id}, ${user.email})
       returning id
     `;
     await sql`
       update device_links
-      set status = 'approved', user_id = ${(req as typeof req & { user: { user_id: string } }).user.user_id},
+      set status = 'approved', user_id = ${user.user_id},
           agent_token_id = ${token.id}, pending_raw_token = ${rawToken}, approved_at = now()
       where id = ${pending.id}
     `;
