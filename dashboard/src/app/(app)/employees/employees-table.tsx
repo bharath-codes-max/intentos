@@ -1,16 +1,14 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { PersonIcon } from "@radix-ui/react-icons";
 import { DataRow } from "@/components/ui/data-row";
 import { Chip } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/common/empty-state";
-import { addToast } from "@/components/ui/toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { colorFor } from "@/lib/color-hash";
 import type { Employee } from "@/lib/api";
-import { revokeEmployeeAction } from "./actions";
+import { RevokeDialog } from "./revoke-employee-dialog";
 
 function timeAgo(iso: string | null): string {
   if (!iso) return "No activity yet";
@@ -21,56 +19,6 @@ function timeAgo(iso: string | null): string {
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours}h ago`;
   return `${Math.floor(hours / 24)}d ago`;
-}
-
-function RevokeDialog({
-  employee,
-  open,
-  onOpenChange,
-}: {
-  employee: Employee;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const [pending, start] = useTransition();
-
-  function handleRevoke() {
-    start(async () => {
-      const result = await revokeEmployeeAction(employee.id);
-      if (!result.ok) {
-        addToast({ title: "Couldn't revoke access", description: result.error, type: "error" });
-        return;
-      }
-      onOpenChange(false);
-      addToast({
-        title: "Access revoked",
-        description: `${employee.email} can no longer sign in or connect devices.`,
-        type: "success",
-      });
-    });
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Revoke {employee.email}&apos;s access?</DialogTitle>
-          <DialogDescription>
-            All their connected devices will be disconnected, and they won&apos;t be able to sign in again until you
-            reinvite them.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
-            Cancel
-          </Button>
-          <Button type="button" variant="destructive" onClick={handleRevoke} disabled={pending}>
-            {pending ? "Revoking…" : "Revoke access"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
 }
 
 function Row({ employee }: { employee: Employee }) {

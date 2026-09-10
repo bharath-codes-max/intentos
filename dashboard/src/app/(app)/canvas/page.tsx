@@ -1,8 +1,9 @@
-import { Share2Icon } from "@radix-ui/react-icons";
-import { EmptyState } from "@/components/common/empty-state";
-import { listDecisions, getDecisionFlow } from "@/lib/api";
+import { redirect } from "next/navigation";
+import { listDecisions, getDecisionFlow, listEmployees, listScopeRequests, listContracts, listTokens } from "@/lib/api";
 import { getCurrentOrgId } from "@/lib/current-org";
+import { getSessionToken } from "@/lib/current-session";
 import { GovernanceCanvas } from "./governance-canvas";
+import { OverviewCanvas } from "./overview-canvas";
 
 export default async function CanvasPage({
   searchParams,
@@ -10,28 +11,36 @@ export default async function CanvasPage({
   searchParams: Promise<{ decision?: string }>;
 }) {
   const { decision } = await searchParams;
+  const token = await getSessionToken();
+  if (!token) redirect("/enter");
   const orgId = await getCurrentOrgId();
-  const recentDecisions = await listDecisions(orgId, 30);
 
-  const targetId = decision ?? recentDecisions[0]?.id;
-
-  if (!targetId) {
+  if (decision) {
+    const [flow, recentDecisions] = await Promise.all([getDecisionFlow(orgId, decision), listDecisions(orgId, 30)]);
     return (
-      <div className="flex h-full items-center justify-center p-2">
-        <EmptyState
-          icon={Share2Icon}
-          title="Nothing to visualize yet"
-          description="Once an agent's action is checked, you'll be able to see it walk through your governance here."
-        />
+      <div className="flex h-full min-h-0 flex-col">
+        <GovernanceCanvas flow={flow} recentDecisions={recentDecisions} />
       </div>
     );
   }
 
-  const flow = await getDecisionFlow(orgId, targetId);
+  const [employees, scopeRequests, contracts, devices, decisions] = await Promise.all([
+    listEmployees(token),
+    listScopeRequests(token),
+    listContracts(orgId),
+    listTokens(orgId),
+    listDecisions(orgId, 40),
+  ]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <GovernanceCanvas flow={flow} recentDecisions={recentDecisions} />
+      <OverviewCanvas
+        employees={employees}
+        devices={devices}
+        pendingRequests={scopeRequests.filter((r) => r.status === "pending")}
+        contracts={contracts.filter((c) => c.status === "active")}
+        decisions={decisions}
+      />
     </div>
   );
 }

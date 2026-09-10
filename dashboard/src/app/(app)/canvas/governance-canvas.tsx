@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   PersonIcon,
@@ -10,21 +10,15 @@ import {
   CheckCircledIcon,
   CrossCircledIcon,
   ExclamationTriangleIcon,
-  MinusIcon,
-  PlusIcon,
-  HomeIcon,
+  ArrowLeftIcon,
 } from "@radix-ui/react-icons";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { colorFor, initialsFromEmail } from "@/lib/color-hash";
 import type { Decision, DecisionFlow } from "@/lib/api";
+import { useCanvasControls } from "./use-canvas-controls";
+import { CanvasSurface, TONE_COLOR, TONE_BG, type Tone, type GenericNode, type GenericEdge } from "./canvas-shell";
 
-type Tone = "neutral" | "allow" | "review" | "block";
-
-interface CanvasNode {
-  id: string;
-  x: number;
-  y: number;
-  width: number;
+interface CanvasNode extends GenericNode {
   icon: typeof PersonIcon;
   title: string;
   subtitle: string;
@@ -35,35 +29,8 @@ interface CanvasNode {
   detail: string;
 }
 
-interface CanvasEdge {
-  from: string;
-  to: string;
-  tone: Tone;
-  active: boolean;
-}
-
-const TONE_COLOR: Record<Tone, string> = {
-  neutral: "var(--border-hover)",
-  allow: "var(--status-allow)",
-  review: "var(--status-review)",
-  block: "var(--status-block)",
-};
-
-const TONE_BG: Record<Tone, string> = {
-  neutral: "bg-white/[0.05] text-muted-foreground border-white/[0.1]",
-  allow: "bg-[var(--status-allow-bg)] text-[var(--status-allow)] border-[color-mix(in_oklch,var(--status-allow),transparent_60%)]",
-  review: "bg-[var(--status-review-bg)] text-[var(--status-review)] border-[color-mix(in_oklch,var(--status-review),transparent_60%)]",
-  block: "bg-[var(--status-block-bg)] text-[var(--status-block)] border-[color-mix(in_oklch,var(--status-block),transparent_60%)]",
-};
-
 const WORLD_W = 1860;
 const WORLD_H = 720;
-const MIN_SCALE = 0.35;
-const MAX_SCALE = 1.8;
-
-function clamp(v: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, v));
-}
 
 function projectIdentity(project: DecisionFlow["project"]): string {
   if (!project) return "—";
@@ -85,7 +52,7 @@ function formatTime(iso: string | null): string {
   return new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
-function buildGraph(flow: DecisionFlow): { nodes: CanvasNode[]; edges: CanvasEdge[] } {
+function buildGraph(flow: DecisionFlow): { nodes: CanvasNode[]; edges: GenericEdge[] } {
   const verdictTone: Tone = flow.decision;
   const employeeName = flow.employee_email ?? flow.device_owner_email ?? "Unknown employee";
   const isReview = flow.decision === "review";
@@ -212,7 +179,7 @@ function buildGraph(flow: DecisionFlow): { nodes: CanvasNode[]; edges: CanvasEdg
     },
   ];
 
-  const edges: CanvasEdge[] = [
+  const edges: GenericEdge[] = [
     { from: "employee", to: "agent", tone: "neutral", active: true },
     { from: "agent", to: "contract", tone: "neutral", active: true },
     { from: "contract", to: "evaluate", tone: "neutral", active: true },
@@ -281,155 +248,25 @@ function timeline(flow: DecisionFlow): { title: string; detail: string }[] {
   return events;
 }
 
-function anchorPoint(node: CanvasNode, size: { width: number; height: number } | undefined, side: "in" | "out") {
-  const h = size?.height ?? 120;
-  const w = size?.width ?? node.width;
-  return { x: node.x + (side === "out" ? w : 0), y: node.y + h / 2 };
-}
-
-function edgePath(from: { x: number; y: number }, to: { x: number; y: number }) {
-  const curve = Math.max(60, (to.x - from.x) / 2);
-  return `M ${from.x} ${from.y} C ${from.x + curve} ${from.y}, ${to.x - curve} ${to.y}, ${to.x} ${to.y}`;
-}
-
 export function GovernanceCanvas({ flow, recentDecisions }: { flow: DecisionFlow; recentDecisions: Decision[] }) {
   const router = useRouter();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const nodeRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [sizes, setSizes] = useState<Record<string, { width: number; height: number }>>({});
-  const [transform, setTransform] = useState({ x: 40, y: 40, scale: 0.85 });
-  const [selectedId, setSelectedId] = useState<string>("contract");
-  const [dragOffsets, setDragOffsets] = useState<Record<string, { dx: number; dy: number }>>({});
-
+  const controls = useCanvasControls(WORLD_W, WORLD_H);
   const { nodes, edges } = useMemo(() => buildGraph(flow), [flow]);
   const events = useMemo(() => timeline(flow), [flow]);
-
-  const positioned = useMemo(
-    () =>
-      nodes.map((n) => {
-        const off = dragOffsets[n.id];
-        return off ? { ...n, x: n.x + off.dx, y: n.y + off.dy } : n;
-      }),
-    [nodes, dragOffsets]
-  );
-
-  const selected = positioned.find((n) => n.id === selectedId) ?? positioned[0];
-
-  // Measure real rendered node sizes so connector lines meet the actual box edges, not a guess.
-  useLayoutEffect(() => {
-    const next: Record<string, { width: number; height: number }> = {};
-    for (const n of nodes) {
-      const el = nodeRefs.current[n.id];
-      if (el) next[n.id] = { width: el.offsetWidth, height: el.offsetHeight };
-    }
-    setSizes(next);
-    setDragOffsets({});
-    setSelectedId(nodes.some((n) => n.id === "contract") ? "contract" : nodes[0].id);
-  }, [nodes]);
-
-  const fitToView = useCallback(() => {
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const scale = clamp(Math.min(rect.width / WORLD_W, rect.height / WORLD_H) * 0.94, MIN_SCALE, 1);
-    setTransform({ x: (rect.width - WORLD_W * scale) / 2, y: (rect.height - WORLD_H * scale) / 2, scale });
-  }, []);
-
-  useEffect(() => {
-    fitToView();
-  }, [fitToView, flow.id]);
-
-  const zoomAt = useCallback((clientX: number, clientY: number, factor: number) => {
-    const rect = containerRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    setTransform((t) => {
-      const newScale = clamp(t.scale * factor, MIN_SCALE, MAX_SCALE);
-      const cx = clientX - rect.left;
-      const cy = clientY - rect.top;
-      const wx = (cx - t.x) / t.scale;
-      const wy = (cy - t.y) / t.scale;
-      return { x: cx - wx * newScale, y: cy - wy * newScale, scale: newScale };
-    });
-  }, []);
-
-  // Mac trackpad pinch arrives as a wheel event with ctrlKey set; plain two-finger scroll pans.
-  const onWheel = useCallback(
-    (e: React.WheelEvent) => {
-      e.preventDefault();
-      if (e.ctrlKey || e.metaKey) {
-        zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.012));
-      } else {
-        setTransform((t) => ({ ...t, x: t.x - e.deltaX, y: t.y - e.deltaY }));
-      }
-    },
-    [zoomAt]
-  );
-
-  // Cmd+=/Cmd+-/Cmd+0 zoom the canvas instead of the browser page, while the canvas has focus.
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (!e.metaKey && !e.ctrlKey) return;
-      const el = containerRef.current;
-      if (!el || !el.contains(document.activeElement)) return;
-      if (e.key === "=" || e.key === "+") {
-        e.preventDefault();
-        const rect = el.getBoundingClientRect();
-        zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, 1.15);
-      } else if (e.key === "-") {
-        e.preventDefault();
-        const rect = el.getBoundingClientRect();
-        zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, 1 / 1.15);
-      } else if (e.key === "0") {
-        e.preventDefault();
-        fitToView();
-      }
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [zoomAt, fitToView]);
-
-  const pan = useRef<{ startClientX: number; startClientY: number; startX: number; startY: number } | null>(null);
-  const nodeDrag = useRef<{ id: string; startClientX: number; startClientY: number; moved: boolean } | null>(null);
-
-  function onBackgroundMouseDown(e: React.MouseEvent) {
-    if ((e.target as HTMLElement).closest("[data-canvas-node]")) return;
-    pan.current = { startClientX: e.clientX, startClientY: e.clientY, startX: transform.x, startY: transform.y };
-  }
-
-  function onNodeMouseDown(id: string, e: React.MouseEvent) {
-    e.stopPropagation();
-    nodeDrag.current = { id, startClientX: e.clientX, startClientY: e.clientY, moved: false };
-  }
-
-  useEffect(() => {
-    function onMove(e: MouseEvent) {
-      if (pan.current) {
-        const p = pan.current;
-        setTransform((t) => ({ ...t, x: p.startX + (e.clientX - p.startClientX), y: p.startY + (e.clientY - p.startClientY) }));
-      } else if (nodeDrag.current) {
-        const d = nodeDrag.current;
-        const dx = (e.clientX - d.startClientX) / transform.scale;
-        const dy = (e.clientY - d.startClientY) / transform.scale;
-        if (Math.abs(e.clientX - d.startClientX) > 3 || Math.abs(e.clientY - d.startClientY) > 3) d.moved = true;
-        setDragOffsets((prev) => ({ ...prev, [d.id]: { dx, dy } }));
-      }
-    }
-    function onUp() {
-      if (nodeDrag.current && !nodeDrag.current.moved) setSelectedId(nodeDrag.current.id);
-      pan.current = null;
-      nodeDrag.current = null;
-    }
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-  }, [transform.scale]);
+  const selected = nodes.find((n) => n.id === controls.selectedId) ?? nodes.find((n) => n.id === "contract") ?? nodes[0];
 
   return (
     <div className="flex min-h-0 flex-1 gap-4">
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-border shadow-[var(--shadow-md)]">
         <div className="flex items-center gap-2 border-b border-border bg-white/[0.015] px-4 py-2.5">
+          <button
+            type="button"
+            onClick={() => router.push("/canvas")}
+            className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[12px] text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
+          >
+            <ArrowLeftIcon className="size-3.5" /> Overview
+          </button>
+          <span className="h-4 w-px bg-border" />
           <span className="text-[12px] text-muted-foreground">Viewing decision</span>
           <Select value={flow.id} onValueChange={(v) => router.push(`/canvas?decision=${v}`)}>
             <SelectTrigger size="sm" className="max-w-sm">
@@ -455,124 +292,51 @@ export function GovernanceCanvas({ flow, recentDecisions }: { flow: DecisionFlow
           </span>
         </div>
 
-        <div
-          ref={containerRef}
-          tabIndex={0}
-          onWheel={onWheel}
-          onMouseDown={onBackgroundMouseDown}
-          className="relative min-h-0 flex-1 cursor-grab overflow-hidden bg-[radial-gradient(circle,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[length:22px_22px] outline-none active:cursor-grabbing"
-        >
-          <div
-            className="absolute top-0 left-0"
-            style={{
-              width: WORLD_W,
-              height: WORLD_H,
-              transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`,
-              transformOrigin: "0 0",
-            }}
-          >
-            <svg className="pointer-events-none absolute inset-0" width={WORLD_W} height={WORLD_H}>
-              {edges.map((e) => {
-                const from = positioned.find((n) => n.id === e.from);
-                const to = positioned.find((n) => n.id === e.to);
-                if (!from || !to) return null;
-                const start = anchorPoint(from, sizes[from.id], "out");
-                const end = anchorPoint(to, sizes[to.id], "in");
-                return (
-                  <path
-                    key={`${e.from}-${e.to}`}
-                    d={edgePath(start, end)}
-                    fill="none"
-                    stroke={e.active ? TONE_COLOR[e.tone] : "var(--border-hover)"}
-                    strokeWidth={e.active ? 2.25 : 1.5}
-                    strokeDasharray={e.active ? "7 6" : undefined}
-                    className={e.active ? "animate-[flow-dash_0.7s_linear_infinite]" : ""}
-                    opacity={e.active ? 1 : 0.5}
-                  />
-                );
-              })}
-            </svg>
-
-            {positioned.map((n) => (
-              <div
-                key={n.id}
-                ref={(el) => {
-                  nodeRefs.current[n.id] = el;
-                }}
-                data-canvas-node
-                onMouseDown={(e) => onNodeMouseDown(n.id, e)}
-                style={{ left: n.x, top: n.y, width: n.width }}
-                className={`absolute cursor-grab rounded-xl border bg-panel-raised shadow-[var(--shadow-md)] transition-[opacity,border-color] duration-150 active:cursor-grabbing ${
-                  selectedId === n.id ? "border-primary" : "border-border"
-                } ${n.dimmed ? "opacity-45" : "opacity-100"}`}
-              >
-                <div className="flex items-center gap-2.5 border-b border-border px-3 py-2.5">
-                  <span
-                    className="flex size-7 shrink-0 items-center justify-center rounded-md"
-                    style={{ background: TONE_COLOR[n.tone] + "22", color: TONE_COLOR[n.tone] }}
-                  >
-                    <n.icon className="size-[15px]" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="truncate text-[12.5px] font-semibold text-foreground">{n.title}</p>
-                    <p className="truncate text-[11px] text-muted-foreground">{n.subtitle}</p>
-                  </div>
+        <CanvasSurface
+          worldW={WORLD_W}
+          worldH={WORLD_H}
+          nodes={nodes}
+          edges={edges}
+          controls={controls}
+          resetKey={flow.id}
+          renderNode={(n, isSelected) => (
+            <div
+              className={`rounded-xl border bg-panel-raised shadow-[var(--shadow-md)] transition-[opacity,border-color] duration-150 ${
+                isSelected ? "border-primary" : "border-border"
+              } ${n.dimmed ? "opacity-45" : "opacity-100"}`}
+            >
+              <div className="flex items-center gap-2.5 border-b border-border px-3 py-2.5">
+                <span
+                  className="flex size-7 shrink-0 items-center justify-center rounded-md"
+                  style={{ background: TONE_COLOR[n.tone] + "22", color: TONE_COLOR[n.tone] }}
+                >
+                  <n.icon className="size-[15px]" />
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-[12.5px] font-semibold text-foreground">{n.title}</p>
+                  <p className="truncate text-[11px] text-muted-foreground">{n.subtitle}</p>
                 </div>
-                {(n.fields.length > 0 || n.statusLabel) && (
-                  <div className="space-y-2 px-3 py-2.5">
-                    {n.fields.map((f) => (
-                      <div key={f.label}>
-                        <p className="text-[9.5px] font-medium tracking-wide text-faint-foreground uppercase">{f.label}</p>
-                        <p className="mt-0.5 line-clamp-2 text-[11.5px] text-foreground">{f.value}</p>
-                      </div>
-                    ))}
-                    {n.statusLabel && (
-                      <span
-                        className={`inline-flex h-5 items-center rounded-full border px-2 text-[10px] font-semibold tracking-wide uppercase ${TONE_BG[n.tone]}`}
-                      >
-                        {n.statusLabel}
-                      </span>
-                    )}
-                  </div>
-                )}
               </div>
-            ))}
-          </div>
-
-          <div className="absolute bottom-4 left-4 flex items-center gap-1 rounded-lg border border-border bg-panel-raised p-1 shadow-[var(--shadow-md)]">
-            <button
-              type="button"
-              onClick={() => {
-                const r = containerRef.current!.getBoundingClientRect();
-                zoomAt(r.left + r.width / 2, r.top + r.height / 2, 1 / 1.2);
-              }}
-              className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
-              aria-label="Zoom out"
-            >
-              <MinusIcon className="size-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={fitToView}
-              className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
-              aria-label="Fit to view"
-            >
-              <HomeIcon className="size-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const r = containerRef.current!.getBoundingClientRect();
-                zoomAt(r.left + r.width / 2, r.top + r.height / 2, 1.2);
-              }}
-              className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.06] hover:text-foreground"
-              aria-label="Zoom in"
-            >
-              <PlusIcon className="size-3.5" />
-            </button>
-            <span className="px-2 font-mono text-[11px] tabular-nums text-faint-foreground">{Math.round(transform.scale * 100)}%</span>
-          </div>
-        </div>
+              {(n.fields.length > 0 || n.statusLabel) && (
+                <div className="space-y-2 px-3 py-2.5">
+                  {n.fields.map((f) => (
+                    <div key={f.label}>
+                      <p className="text-[9.5px] font-medium tracking-wide text-faint-foreground uppercase">{f.label}</p>
+                      <p className="mt-0.5 line-clamp-2 text-[11.5px] text-foreground">{f.value}</p>
+                    </div>
+                  ))}
+                  {n.statusLabel && (
+                    <span
+                      className={`inline-flex h-5 items-center rounded-full border px-2 text-[10px] font-semibold tracking-wide uppercase ${TONE_BG[n.tone]}`}
+                    >
+                      {n.statusLabel}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        />
       </div>
 
       <div className="w-[320px] shrink-0 overflow-y-auto rounded-lg border border-border bg-panel p-4 shadow-[var(--shadow-md)]">
