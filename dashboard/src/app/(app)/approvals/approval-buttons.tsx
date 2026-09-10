@@ -23,7 +23,7 @@ export function ApprovalButtons({ id }: { id: string }) {
         disabled={pending}
         onClick={() =>
           startTransition(async () => {
-            await resolveApprovalAction(id, true, "you@company.com");
+            await resolveApprovalAction(id, true);
             setResolved("approved");
           })
         }
@@ -36,7 +36,7 @@ export function ApprovalButtons({ id }: { id: string }) {
         disabled={pending}
         onClick={() =>
           startTransition(async () => {
-            await resolveApprovalAction(id, false, "you@company.com");
+            await resolveApprovalAction(id, false);
             setResolved("denied");
           })
         }
