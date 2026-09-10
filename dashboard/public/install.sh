@@ -9,7 +9,13 @@ if ! command -v node >/dev/null 2>&1; then
 fi
 
 DASHBOARD_URL="${INTENTOS_DASHBOARD_URL:-https://intentos-ecru.vercel.app}"
-TMP_FILE="$(mktemp -t intentos-connect.XXXXXX.mjs 2>/dev/null || mktemp)"
+# A plain `mktemp -t` template is handled differently by BSD (macOS) vs GNU (Linux)
+# mktemp — BSD appends its random suffix AFTER the whole template instead of
+# substituting XXXXXX in place, which silently produces a file without a real
+# .mjs extension and breaks Node's ESM loader. Making our own temp dir sidesteps
+# the platform difference entirely: the filename inside it is always exact.
+TMP_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t intentos-connect)"
+TMP_FILE="$TMP_DIR/connect.mjs"
 curl -fsSL "$DASHBOARD_URL/connect.mjs" -o "$TMP_FILE"
 node "$TMP_FILE"
-rm -f "$TMP_FILE"
+rm -rf "$TMP_DIR"
