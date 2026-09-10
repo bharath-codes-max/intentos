@@ -8,9 +8,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { requestScopeChangeAction } from "./actions";
 
 const EXAMPLES = [
-  { label: "Folder name", value: "my-project" },
-  { label: "Full local path fragment", value: "Users/yourname/code/my-project" },
-  { label: "Git repo identity", value: "github.com/your-org/my-project" },
+  { label: "Folder name", value: "my-project", color: "#7FC6EC" },
+  { label: "Full local path fragment", value: "Users/yourname/code/my-project", color: "#B39CE8" },
+  { label: "Git repo identity", value: "github.com/your-org/my-project", color: "#A9D66B" },
 ];
 
 export function ScopeRequestForm() {
@@ -36,16 +36,20 @@ export function ScopeRequestForm() {
         Nothing changes until they approve it. This must match text that actually appears in
         the project&apos;s real folder path or git remote — it&apos;s matched literally, not guessed.
       </p>
-      <div className="rounded-md border border-border bg-muted/10 p-2.5 text-[11px] text-muted-foreground">
-        <span className="font-medium text-foreground">What to type — examples:</span>
-        <ul className="mt-1 space-y-0.5">
-          {EXAMPLES.map((ex) => (
-            <li key={ex.value}>
-              <span className="text-faint-foreground">{ex.label}:</span>{" "}
-              <code className="rounded bg-muted px-1 py-0.5 font-mono">{ex.value}</code>
-            </li>
-          ))}
-        </ul>
+      <div className="space-y-1.5">
+        <span className="text-[11px] font-medium text-foreground">What to type — examples:</span>
+        {EXAMPLES.map((ex) => (
+          <div
+            key={ex.value}
+            className="flex items-center gap-2.5 rounded-md border-l-2 bg-[color-mix(in_oklch,var(--panel-raised),transparent_0%)] py-1.5 pr-2.5 pl-2.5"
+            style={{ borderLeftColor: ex.color, backgroundColor: `color-mix(in oklch, ${ex.color}, transparent 92%)` }}
+          >
+            <span className="w-32 shrink-0 text-[11px] font-medium" style={{ color: ex.color }}>
+              {ex.label}
+            </span>
+            <code className="truncate font-mono text-[11px] text-foreground">{ex.value}</code>
+          </div>
+        ))}
       </div>
       <div className="flex items-center gap-2">
         <Input
