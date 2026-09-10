@@ -6,8 +6,8 @@ export default function AuthGroupLayout({ children }: { children: React.ReactNod
   return (
     <div className="grid min-h-screen w-full grid-cols-1 bg-[#101112] lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <div className="auth-light relative flex min-h-screen flex-col bg-background px-10 py-10 sm:px-20">
-        <Link href="/" className="flex items-center gap-2 text-[17px] font-semibold text-foreground">
-          <Logo size={24} />
+        <Link href="/" className="flex items-center gap-2.5 text-[22px] font-bold tracking-tight text-foreground">
+          <Logo size={32} />
           Intentos
         </Link>
         <div className="flex flex-1 items-center justify-center">

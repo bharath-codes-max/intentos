@@ -13,6 +13,14 @@ type Step = {
   note: string;
 };
 
+/** Standard terminal/diff colors for the path text — green for allow, red for block,
+ *  amber for review — matching the badge color it sits next to. */
+const PATH_COLOR: Record<Step["verdict"], string> = {
+  allow: "text-[var(--status-allow)]",
+  block: "text-[var(--status-block)]",
+  review: "text-[var(--status-review)]",
+};
+
 const STEPS: Step[] = [
   {
     narration: "Claude Code reads a file to understand the task.",
@@ -71,7 +79,7 @@ export function AuthShowcase() {
       <button
         type="button"
         onClick={advance}
-        className="group relative mt-10 w-full max-w-md cursor-pointer rounded-xl border border-white/[0.08] bg-panel/90 p-4 text-left shadow-[0_24px_60px_rgba(0,0,0,0.5)] backdrop-blur transition-colors hover:border-white/[0.16]"
+        className="group relative mt-10 w-full max-w-md cursor-pointer animate-[float_5s_ease-in-out_infinite] rounded-xl border border-white/[0.08] bg-panel/90 p-4 text-left shadow-[0_24px_60px_rgba(0,0,0,0.5)] backdrop-blur transition-colors hover:border-white/[0.16]"
       >
         <div className="mb-3 flex items-center justify-between border-b border-white/[0.06] pb-3">
           <span className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
@@ -87,7 +95,7 @@ export function AuthShowcase() {
         <div className="flex items-center justify-between gap-3 rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2.5">
           <div className="flex min-w-0 items-center gap-2">
             <CodeIcon className="size-3.5 shrink-0 text-muted-foreground" />
-            <span className="truncate font-mono text-[12px] text-foreground">{current.target}</span>
+            <span className={`truncate font-mono text-[12px] ${PATH_COLOR[current.verdict]}`}>{current.target}</span>
           </div>
           <VerdictBadge verdict={current.verdict} />
         </div>
