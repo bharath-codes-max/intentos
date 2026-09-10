@@ -1,5 +1,6 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { listDecisions, getDecisionFlow, listEmployees, listScopeRequests, listContracts, listTokens } from "@/lib/api";
+import { listDecisions, getDecisionFlow, listEmployees, listScopeRequests, listContracts, listTokens, getActiveInvite } from "@/lib/api";
 import { getCurrentOrgId } from "@/lib/current-org";
 import { getSessionToken } from "@/lib/current-session";
 import { GovernanceCanvas } from "./governance-canvas";
@@ -24,13 +25,19 @@ export default async function CanvasPage({
     );
   }
 
-  const [employees, scopeRequests, contracts, devices, decisions] = await Promise.all([
+  const [employees, scopeRequests, contracts, devices, decisions, invite] = await Promise.all([
     listEmployees(token),
     listScopeRequests(token),
     listContracts(orgId),
     listTokens(orgId),
     listDecisions(orgId, 40),
+    getActiveInvite(token),
   ]);
+
+  const h = await headers();
+  const host = h.get("host") ?? "localhost:3000";
+  const proto = host.startsWith("localhost") ? "http" : "https";
+  const inviteUrl = `${proto}://${host}/join/${invite.code}`;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -40,6 +47,7 @@ export default async function CanvasPage({
         pendingRequests={scopeRequests.filter((r) => r.status === "pending")}
         contracts={contracts.filter((c) => c.status === "active")}
         decisions={decisions}
+        inviteUrl={inviteUrl}
       />
     </div>
   );

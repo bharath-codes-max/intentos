@@ -10,6 +10,11 @@ import {
   QuestionMarkCircledIcon,
   ExternalLinkIcon,
   ArrowLeftIcon,
+  PaperPlaneIcon,
+  CopyIcon,
+  CheckIcon,
+  ReloadIcon,
+  Cross2Icon,
 } from "@radix-ui/react-icons";
 import { Button } from "@/components/ui/button";
 import { VerdictBadge } from "@/components/verdict-badge";
@@ -19,10 +24,10 @@ import { useCanvasControls } from "./use-canvas-controls";
 import { CanvasSurface, TONE_COLOR, TONE_BG, type Tone, type GenericNode, type GenericEdge } from "./canvas-shell";
 import { ApproveDialog, type SelectableContract } from "../employees/approve-request-dialog";
 import { RevokeDialog } from "../employees/revoke-employee-dialog";
-import { resolveScopeRequestAction } from "../employees/actions";
+import { resolveScopeRequestAction, regenerateInviteAction } from "../employees/actions";
 import { addToast } from "@/components/ui/toast";
 
-type NodeKind = "employee" | "device" | "request" | "contract";
+type NodeKind = "employee" | "device" | "request" | "contract" | "invite";
 
 interface OverviewNode extends GenericNode {
   kind: NodeKind;
@@ -35,7 +40,12 @@ interface OverviewNode extends GenericNode {
   device?: AgentToken;
   request?: ScopeRequest;
   contract?: Contract;
+  /** True only for nodes the admin dragged onto the canvas themselves (not derived from live
+   *  server data) — these are the only ones that can be removed from the canvas. */
+  composed?: boolean;
 }
+
+const PALETTE_ITEMS = [{ kind: "invite" as const, label: "Invite Employee", icon: PaperPlaneIcon }];
 
 const COL_EMPLOYEE = 40;
 const COL_DEVICE = 340;
@@ -149,10 +159,10 @@ function buildGraph(
   return { nodes, edges, worldW: COL_CONTRACT + 300, worldH: tallest + TOP_PAD * 2 };
 }
 
-function NodeCard({ n, isSelected }: { n: OverviewNode; isSelected: boolean }) {
+function NodeCard({ n, isSelected, onRemove }: { n: OverviewNode; isSelected: boolean; onRemove?: () => void }) {
   return (
     <div
-      className={`rounded-xl border bg-panel-raised shadow-[var(--shadow-md)] transition-colors duration-150 ${
+      className={`group/node rounded-xl border bg-panel-raised shadow-[var(--shadow-md)] transition-colors duration-150 ${
         isSelected ? "border-primary" : "border-border"
       }`}
     >
@@ -172,7 +182,39 @@ function NodeCard({ n, isSelected }: { n: OverviewNode; isSelected: boolean }) {
             {n.statusLabel}
           </span>
         )}
+        {n.composed && onRemove && (
+          <button
+            type="button"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            className="ml-1 flex size-5 shrink-0 items-center justify-center rounded-md text-faint-foreground opacity-0 transition-opacity hover:bg-white/[0.08] hover:text-foreground group-hover/node:opacity-100"
+            aria-label="Remove from canvas"
+          >
+            <Cross2Icon className="size-3" />
+          </button>
+        )}
       </div>
+    </div>
+  );
+}
+
+function PaletteItem({ label, icon: Icon, onDragStartKind }: { label: string; icon: typeof PersonIcon; onDragStartKind: string }) {
+  return (
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData("text/plain", onDragStartKind);
+        e.dataTransfer.effectAllowed = "copy";
+      }}
+      className="flex cursor-grab items-center gap-2 rounded-lg border border-border bg-panel-raised px-2.5 py-2 shadow-[var(--shadow-sm)] transition-colors active:cursor-grabbing hover:border-border-hover"
+    >
+      <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary/15 text-primary">
+        <Icon className="size-3.5" />
+      </span>
+      <span className="text-[12px] font-medium text-foreground">{label}</span>
     </div>
   );
 }
@@ -239,27 +281,69 @@ export function OverviewCanvas({
   pendingRequests,
   contracts,
   decisions,
+  inviteUrl,
 }: {
   employees: Employee[];
   devices: AgentToken[];
   pendingRequests: ScopeRequest[];
   contracts: Contract[];
   decisions: Decision[];
+  inviteUrl: string;
 }) {
   const router = useRouter();
-  const { nodes, edges, worldW, worldH } = useMemo(
+  const { nodes: liveNodes, edges, worldW, worldH } = useMemo(
     () => buildGraph(employees, devices, pendingRequests, contracts),
     [employees, devices, pendingRequests, contracts]
   );
   const controls = useCanvasControls(worldW, worldH);
+  const [composedNodes, setComposedNodes] = useState<OverviewNode[]>([]);
+  const nodes = useMemo(() => [...liveNodes, ...composedNodes], [liveNodes, composedNodes]);
   const selected = nodes.find((n) => n.id === controls.selectedId);
   const isEmpty = nodes.length === 0;
 
+  function handleDrop(e: React.DragEvent) {
+    const kind = e.dataTransfer.getData("text/plain");
+    if (kind !== "invite") return;
+    const rect = controls.containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const worldX = (e.clientX - rect.left - controls.transform.x) / controls.transform.scale;
+    const worldY = (e.clientY - rect.top - controls.transform.y) / controls.transform.scale;
+    const id = `invite:${Date.now()}`;
+    setComposedNodes((prev) => [
+      ...prev,
+      {
+        id,
+        x: Math.max(0, worldX - 100),
+        y: Math.max(0, worldY - 30),
+        width: 220,
+        kind: "invite",
+        icon: PaperPlaneIcon,
+        title: "Invite Employee",
+        subtitle: "Not shared yet",
+        tone: "neutral",
+        composed: true,
+      },
+    ]);
+    controls.setSelectedId(id);
+  }
+
+  function removeComposedNode(id: string) {
+    setComposedNodes((prev) => prev.filter((n) => n.id !== id));
+    if (controls.selectedId === id) controls.setSelectedId(null);
+  }
+
   return (
-    <div className="flex min-h-0 flex-1 gap-4">
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-border shadow-[var(--shadow-md)]">
+    <div className="flex min-h-0 flex-1 overflow-hidden rounded-lg border border-border shadow-[var(--shadow-md)]">
+      <div className="flex w-[176px] shrink-0 flex-col gap-2 border-r border-border bg-panel p-3">
+        <p className="px-0.5 text-[10.5px] font-semibold tracking-wide text-faint-foreground uppercase">Drag onto canvas</p>
+        {PALETTE_ITEMS.map((item) => (
+          <PaletteItem key={item.kind} label={item.label} icon={item.icon} onDragStartKind={item.kind} />
+        ))}
+      </div>
+
+      <div className="flex min-w-0 flex-1 flex-col">
         <div className="flex items-center gap-2 border-b border-border bg-white/[0.015] px-4 py-2.5">
-          <span className="text-[13px] font-medium text-foreground">Live governance map</span>
+          <span className="text-[13px] font-medium text-foreground">Command Center</span>
           <span className="text-[12px] text-muted-foreground">
             {employees.length} employees · {devices.filter((d) => !d.revoked_at).length} devices · {pendingRequests.length} pending ·{" "}
             {contracts.length} contracts
@@ -269,7 +353,7 @@ export function OverviewCanvas({
         {isEmpty ? (
           <div className="flex flex-1 items-center justify-center p-6 text-center">
             <p className="max-w-sm text-[13px] text-muted-foreground">
-              Nothing to show yet — once employees join and connect a device, they&apos;ll appear here.
+              Nothing to show yet — drag &quot;Invite Employee&quot; onto the canvas to bring your first person in.
             </p>
           </div>
         ) : (
@@ -280,7 +364,10 @@ export function OverviewCanvas({
             edges={edges}
             controls={controls}
             resetKey={`${employees.length}-${devices.length}-${pendingRequests.length}-${contracts.length}`}
-            renderNode={(n, isSelected) => <NodeCard n={n} isSelected={isSelected} />}
+            onDrop={handleDrop}
+            renderNode={(n, isSelected) => (
+              <NodeCard n={n} isSelected={isSelected} onRemove={n.composed ? () => removeComposedNode(n.id) : undefined} />
+            )}
             worldOverlay={
               <>
                 <ColumnLabel text="Employees" x={COL_EMPLOYEE} />
@@ -293,7 +380,7 @@ export function OverviewCanvas({
         )}
       </div>
 
-      <div className="w-[340px] shrink-0 overflow-y-auto rounded-lg border border-border bg-panel p-4 shadow-[var(--shadow-md)]">
+      <div className="w-[340px] shrink-0 overflow-y-auto border-l border-border bg-panel p-4">
         {!selected && (
           <>
             <p className="text-[11px] font-medium tracking-wide text-faint-foreground uppercase">Recent decisions</p>
@@ -428,7 +515,85 @@ export function OverviewCanvas({
             </div>
           </>
         )}
+
+        {selected?.kind === "invite" && (
+          <>
+            <div className="flex items-center gap-2">
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-primary/15 text-primary">
+                <PaperPlaneIcon className="size-3.5" />
+              </span>
+              <p className="text-[14px] font-semibold text-foreground">Invite Employee</p>
+            </div>
+            <p className="mt-1.5 text-[12px] text-muted-foreground">
+              Share this link with anyone at your company. Each person signs in with their own work email — the link itself doesn&apos;t
+              grant access to anyone.
+            </p>
+            <InviteLinkForCanvas inviteUrl={inviteUrl} />
+          </>
+        )}
       </div>
+    </div>
+  );
+}
+
+function InviteLinkForCanvas({ inviteUrl }: { inviteUrl: string }) {
+  const [copied, setCopied] = useState(false);
+  const [regenOpen, setRegenOpen] = useState(false);
+  const [pending, start] = useTransition();
+
+  return (
+    <div className="mt-4 space-y-3 border-t border-border pt-4">
+      <div>
+        <p className="text-[10.5px] font-medium tracking-wide text-faint-foreground uppercase">Invite link</p>
+        <div className="mt-1.5 flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-2">
+          <code className="flex-1 overflow-x-auto text-[11.5px] whitespace-nowrap text-foreground">{inviteUrl}</code>
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(inviteUrl);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1500);
+            }}
+            className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.08] hover:text-foreground"
+            aria-label="Copy invite link"
+          >
+            {copied ? <CheckIcon className="size-3.5" /> : <CopyIcon className="size-3.5" />}
+          </button>
+        </div>
+      </div>
+
+      {regenOpen ? (
+        <div className="space-y-2 rounded-md border border-border bg-background p-2.5">
+          <p className="text-[11.5px] text-muted-foreground">Regenerate? The old link stops working immediately.</p>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => setRegenOpen(false)} disabled={pending}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              disabled={pending}
+              onClick={() =>
+                start(async () => {
+                  const result = await regenerateInviteAction();
+                  if (!result.ok) {
+                    addToast({ title: "Couldn't regenerate link", description: result.error, type: "error" });
+                    return;
+                  }
+                  setRegenOpen(false);
+                  addToast({ title: "Invite link regenerated", description: "The old link no longer works.", type: "success" });
+                })
+              }
+            >
+              {pending ? "Regenerating…" : "Confirm"}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <Button type="button" variant="outline" size="sm" onClick={() => setRegenOpen(true)}>
+          <ReloadIcon /> Regenerate link
+        </Button>
+      )}
     </div>
   );
 }

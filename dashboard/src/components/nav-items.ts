@@ -29,7 +29,7 @@ export const TOP_NAV: NavItem[] = [
 
 /** Collapsible "Governance" section. */
 export const GOVERNANCE_NAV: NavItem[] = [
-  { href: "/canvas", label: "Governance Canvas", icon: Share2Icon, color: "#8C8FFF" },
+  { href: "/canvas", label: "Command Center", icon: Share2Icon, color: "#8C8FFF" },
   { href: "/policies", label: "Intent Contracts", icon: FileTextIcon, color: "#22D3EE" },
   { href: "/decisions", label: "Decisions", icon: MixIcon, color: "var(--primary)" },
   { href: "/approvals", label: "Approvals", icon: CheckCircledIcon, color: "var(--status-review)" },

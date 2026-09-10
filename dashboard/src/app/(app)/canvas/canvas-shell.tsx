@@ -59,6 +59,7 @@ export function CanvasSurface<T extends GenericNode>({
   renderNode,
   resetKey,
   worldOverlay,
+  onDrop,
 }: {
   worldW: number;
   worldH: number;
@@ -72,6 +73,10 @@ export function CanvasSurface<T extends GenericNode>({
   /** Extra content rendered inside the same pannable/zoomable world as the nodes — e.g. column
    *  labels — so it stays aligned with them under pan and zoom instead of drifting. */
   worldOverlay?: ReactNode;
+  /** Drop target for palette drag-and-drop — receives the raw DragEvent so the caller can read
+   *  dataTransfer and convert clientX/clientY to world coordinates itself (it already has the
+   *  transform via `controls`). */
+  onDrop?: (e: React.DragEvent) => void;
 }) {
   const { containerRef, transform, fitToView, zoomAt, dragOffsets, resetDragOffsets, selectedId, setSelectedId, onBackgroundMouseDown, onNodeMouseDown } =
     controls;
@@ -100,6 +105,8 @@ export function CanvasSurface<T extends GenericNode>({
       ref={containerRef}
       tabIndex={0}
       onMouseDown={onBackgroundMouseDown}
+      onDragOver={onDrop ? (e) => e.preventDefault() : undefined}
+      onDrop={onDrop}
       className="relative min-h-0 flex-1 cursor-grab overflow-hidden bg-[radial-gradient(circle,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[length:22px_22px] outline-none active:cursor-grabbing"
     >
       <div
