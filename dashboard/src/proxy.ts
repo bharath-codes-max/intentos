@@ -5,7 +5,10 @@ import { GATE_COOKIE } from "@/lib/site-gate";
 const PUBLIC_PATHS = ["/login", "/signup", "/connect"];
 
 export function proxy(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+  const { pathname, search } = req.nextUrl;
+  // Preserve the query string (e.g. /connect?code=XXXX) through the redirect chain —
+  // pathname alone drops it, which silently broke the device-approval deep link.
+  const fullPath = pathname + search;
 
   if (pathname === "/enter") {
     return NextResponse.next();
@@ -13,7 +16,7 @@ export function proxy(req: NextRequest) {
   const gated = req.cookies.get(GATE_COOKIE)?.value === "granted";
   if (!gated) {
     const enterUrl = new URL("/enter", req.url);
-    if (pathname !== "/") enterUrl.searchParams.set("next", pathname);
+    if (pathname !== "/") enterUrl.searchParams.set("next", fullPath);
     return NextResponse.redirect(enterUrl);
   }
 
@@ -23,7 +26,7 @@ export function proxy(req: NextRequest) {
   const session = req.cookies.get(SESSION_COOKIE)?.value;
   if (!session) {
     const enterUrl = new URL("/enter", req.url);
-    if (pathname !== "/") enterUrl.searchParams.set("next", pathname);
+    if (pathname !== "/") enterUrl.searchParams.set("next", fullPath);
     return NextResponse.redirect(enterUrl);
   }
   return NextResponse.next();
