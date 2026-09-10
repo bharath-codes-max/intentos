@@ -35,11 +35,12 @@ const EXECUTION_STATUS_FOR: Record<Verdict, "denied" | "waiting_approval" | "att
 };
 
 /**
- * Per-device project scope, checked BEFORE policy evaluation. 'exclude' devices skip policy
- * checks entirely for named projects (default allow, no rule can override that — it's meant
- * as "don't govern my own sandbox," not a loophole a policy could still block through).
- * 'include_only' devices hard-block anything outside the named projects, before any policy
- * gets a chance to allow it — this is an allowlist, not a suggestion.
+ * Per-device project scope, checked BEFORE policy evaluation. Outside the governed set —
+ * either a named EXCLUDE project, or anything not in an INCLUDE_ONLY list — Intentos does
+ * not intervene at all: the action is allowed without ever reaching policy evaluation, not
+ * merely "happens to be allowed by a rule." A folder in scope stays fully governed by every
+ * active contract exactly as before (e.g. .env still BLOCKs there); a folder out of scope
+ * is invisible to Intentos, by design — not a lesser form of governed.
  */
 function applyScope(
   token: { scope_mode: string; scope_projects: string[] },
@@ -50,11 +51,9 @@ function applyScope(
   const projectKey = (call.project?.normalized_repo || call.project?.repo_root || call.project?.cwd || "").toLowerCase();
   const matches = projectKey !== "" && token.scope_projects.some((p) => projectKey.includes(p.toLowerCase()));
 
-  if (token.scope_mode === "exclude" && matches) {
-    return { verdict: "allow", reason: "Project excluded from this device's governance scope.", matchedPolicyId: null };
-  }
-  if (token.scope_mode === "include_only" && !matches) {
-    return { verdict: "block", reason: "This project is outside this device's allowed scope.", matchedPolicyId: null };
+  const outOfScope = token.scope_mode === "exclude" ? matches : token.scope_mode === "include_only" ? !matches : false;
+  if (outOfScope) {
+    return { verdict: "allow", reason: "Outside this device's governed scope — Intentos does not intervene here.", matchedPolicyId: null };
   }
   return null;
 }
