@@ -17,7 +17,7 @@ export function AppShell({
   return (
     <div className="min-h-full w-full bg-background">
       <TopNav orgs={orgs} currentOrgId={currentOrgId} />
-      <main className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">{children}</main>
+      <main className="mx-auto w-full max-w-[1400px] px-3 py-6 sm:px-4 sm:py-8">{children}</main>
       <Toaster />
     </div>
   );
