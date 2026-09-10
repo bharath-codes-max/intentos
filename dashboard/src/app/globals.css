@@ -115,6 +115,20 @@
   --sidebar-ring: var(--ring);
 }
 
+/* Scoped light override for the (auth) left panel only — the rest of the product is dark-only
+   (see :root/.dark above), so this exists purely to give login/signup a white canvas without
+   introducing a real light theme app-wide. */
+.auth-light {
+  --background: #ffffff;
+  --panel: #ffffff;
+  --foreground: #171717;
+  --muted-foreground: #6b6b76;
+  --border: rgba(0, 0, 0, 0.12);
+  --input: rgba(0, 0, 0, 0.06);
+  --muted: #f4f4f6;
+  --destructive: #d1352b;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
