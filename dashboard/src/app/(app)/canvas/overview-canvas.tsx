@@ -43,18 +43,22 @@ interface OverviewNode extends GenericNode {
   /** True only for nodes the admin dragged onto the canvas themselves (not derived from live
    *  server data) — these are the only ones that can be removed from the canvas. */
   composed?: boolean;
+  /** Invite nodes only — purely local tracking of who this invite was meant for. Nothing is
+   *  actually emailed; this just labels the node so it reads as "invited: x@y.com" instead of
+   *  a bare, anonymous "Invite Employee" box. Not persisted server-side. */
+  inviteTarget?: string | null;
 }
 
 const PALETTE_ITEMS = [{ kind: "invite" as const, label: "Invite Employee", icon: PaperPlaneIcon }];
 
 const COL_EMPLOYEE = 40;
-const COL_DEVICE = 340;
-const COL_REQUEST = 660;
-const COL_CONTRACT = 1000;
-const NODE_H = 64;
-const REQUEST_H = 76;
-const GAP = 14;
-const TOP_PAD = 40;
+const COL_DEVICE = 380;
+const COL_REQUEST = 720;
+const COL_CONTRACT = 1100;
+const NODE_H = 76;
+const REQUEST_H = 88;
+const GAP = 18;
+const TOP_PAD = 44;
 
 function stack<T>(items: T[], x: number, w: number, h: number): { item: T; x: number; y: number; w: number }[] {
   return items.map((item, i) => ({ item, x, y: TOP_PAD + i * (h + GAP), w }));
@@ -83,7 +87,7 @@ function buildGraph(
   const nodes: OverviewNode[] = [];
   const edges: GenericEdge[] = [];
 
-  const employeeStack = stack(employees, COL_EMPLOYEE, 220, NODE_H);
+  const employeeStack = stack(employees, COL_EMPLOYEE, 260, NODE_H);
   for (const { item: e, x, y, w } of employeeStack) {
     nodes.push({
       id: `employee:${e.id}`,
@@ -100,7 +104,7 @@ function buildGraph(
     });
   }
 
-  const deviceStack = stack(devices, COL_DEVICE, 220, NODE_H);
+  const deviceStack = stack(devices, COL_DEVICE, 260, NODE_H);
   for (const { item: d, x, y, w } of deviceStack) {
     nodes.push({
       id: `device:${d.id}`,
@@ -119,7 +123,7 @@ function buildGraph(
     if (owner) edges.push({ from: `employee:${owner.id}`, to: `device:${d.id}`, tone: "neutral", active: !d.revoked_at });
   }
 
-  const requestStack = stack(pendingRequests, COL_REQUEST, 260, REQUEST_H);
+  const requestStack = stack(pendingRequests, COL_REQUEST, 300, REQUEST_H);
   for (const { item: r, x, y, w } of requestStack) {
     nodes.push({
       id: `request:${r.id}`,
@@ -138,7 +142,7 @@ function buildGraph(
     if (requester) edges.push({ from: `employee:${requester.id}`, to: `request:${r.id}`, tone: "review", active: true });
   }
 
-  const contractStack = stack(contracts, COL_CONTRACT, 260, NODE_H);
+  const contractStack = stack(contracts, COL_CONTRACT, 300, NODE_H);
   for (const { item: c, x, y, w } of contractStack) {
     nodes.push({
       id: `contract:${c.id}`,
@@ -156,29 +160,77 @@ function buildGraph(
 
   const tallest = Math.max(employeeStack.length * (NODE_H + GAP), deviceStack.length * (NODE_H + GAP), requestStack.length * (REQUEST_H + GAP), contractStack.length * (NODE_H + GAP), 200);
 
-  return { nodes, edges, worldW: COL_CONTRACT + 300, worldH: tallest + TOP_PAD * 2 };
+  return { nodes, edges, worldW: COL_CONTRACT + 340, worldH: tallest + TOP_PAD * 2 };
 }
 
-function NodeCard({ n, isSelected, onRemove }: { n: OverviewNode; isSelected: boolean; onRemove?: () => void }) {
+/** Darker-gray "matte" background for any editable field sitting on a pure-black card — the
+ *  contrast is what makes it read as an input rather than more label text. */
+const CARD_INPUT_CLASS =
+  "w-full rounded-md border border-white/[0.08] bg-[#1c1c1f] px-2.5 py-1.5 text-[12px] text-foreground placeholder:text-faint-foreground outline-none focus:border-white/20";
+
+function InviteNodeBody({ node, onTrack }: { node: OverviewNode; onTrack: (email: string) => void }) {
+  const [email, setEmail] = useState("");
+  if (node.inviteTarget) {
+    return (
+      <div className="border-t border-white/[0.06] px-3.5 py-3">
+        <p className="text-[9.5px] font-medium tracking-wide text-faint-foreground uppercase">Invited</p>
+        <p className="mt-1 truncate text-[12.5px] text-foreground">{node.inviteTarget}</p>
+        <p className="mt-1 text-[11px] text-muted-foreground">Not yet joined — copy the link in the panel and send it yourself.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-2 border-t border-white/[0.06] px-3.5 py-3" onMouseDown={(e) => e.stopPropagation()}>
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="name@company.com"
+        className={CARD_INPUT_CLASS}
+      />
+      <Button
+        type="button"
+        size="sm"
+        className="w-full"
+        disabled={!email.trim()}
+        onClick={() => onTrack(email.trim())}
+      >
+        Mark as invited
+      </Button>
+    </div>
+  );
+}
+
+function NodeCard({
+  n,
+  isSelected,
+  onRemove,
+  onTrackInvite,
+}: {
+  n: OverviewNode;
+  isSelected: boolean;
+  onRemove?: () => void;
+  onTrackInvite?: (email: string) => void;
+}) {
   return (
     <div
-      className={`group/node rounded-xl border bg-panel-raised shadow-[var(--shadow-md)] transition-colors duration-150 ${
+      className={`group/node overflow-hidden rounded-xl border bg-black shadow-[var(--shadow-md)] transition-colors duration-150 ${
         isSelected ? "border-primary" : "border-border"
       }`}
     >
-      <div className="flex items-center gap-2.5 px-3 py-2.5">
+      <div className="flex items-center gap-3 px-3.5 py-3">
         <span
-          className="flex size-7 shrink-0 items-center justify-center rounded-md"
+          className="flex size-8 shrink-0 items-center justify-center rounded-md"
           style={{ background: TONE_COLOR[n.tone] + "22", color: TONE_COLOR[n.tone] }}
         >
-          <n.icon className="size-[14px]" />
+          <n.icon className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[12px] font-semibold text-foreground">{n.title}</p>
-          <p className="truncate text-[11px] text-muted-foreground">{n.subtitle}</p>
+          <p className="truncate text-[13px] font-semibold text-foreground">{n.title}</p>
+          <p className="truncate text-[11.5px] text-muted-foreground">{n.subtitle}</p>
         </div>
         {n.statusLabel && (
-          <span className={`shrink-0 rounded-full border px-1.5 py-0.5 text-[9px] font-semibold tracking-wide uppercase ${TONE_BG[n.tone]}`}>
+          <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[9.5px] font-semibold tracking-wide uppercase ${TONE_BG[n.tone]}`}>
             {n.statusLabel}
           </span>
         )}
@@ -197,6 +249,7 @@ function NodeCard({ n, isSelected, onRemove }: { n: OverviewNode; isSelected: bo
           </button>
         )}
       </div>
+      {n.kind === "invite" && onTrackInvite && <InviteNodeBody node={n} onTrack={onTrackInvite} />}
     </div>
   );
 }
@@ -313,15 +366,16 @@ export function OverviewCanvas({
       ...prev,
       {
         id,
-        x: Math.max(0, worldX - 100),
+        x: Math.max(0, worldX - 120),
         y: Math.max(0, worldY - 30),
-        width: 220,
+        width: 260,
         kind: "invite",
         icon: PaperPlaneIcon,
         title: "Invite Employee",
         subtitle: "Not shared yet",
         tone: "neutral",
         composed: true,
+        inviteTarget: null,
       },
     ]);
     controls.setSelectedId(id);
@@ -330,6 +384,10 @@ export function OverviewCanvas({
   function removeComposedNode(id: string) {
     setComposedNodes((prev) => prev.filter((n) => n.id !== id));
     if (controls.selectedId === id) controls.setSelectedId(null);
+  }
+
+  function trackInvite(id: string, email: string) {
+    setComposedNodes((prev) => prev.map((n) => (n.id === id ? { ...n, inviteTarget: email } : n)));
   }
 
   return (
@@ -366,7 +424,12 @@ export function OverviewCanvas({
             resetKey={`${employees.length}-${devices.length}-${pendingRequests.length}-${contracts.length}`}
             onDrop={handleDrop}
             renderNode={(n, isSelected) => (
-              <NodeCard n={n} isSelected={isSelected} onRemove={n.composed ? () => removeComposedNode(n.id) : undefined} />
+              <NodeCard
+                n={n}
+                isSelected={isSelected}
+                onRemove={n.composed ? () => removeComposedNode(n.id) : undefined}
+                onTrackInvite={n.kind === "invite" ? (email) => trackInvite(n.id, email) : undefined}
+              />
             )}
             worldOverlay={
               <>
