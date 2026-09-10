@@ -7,8 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import type { Employee } from "@/lib/api";
 import { revokeEmployeeAction } from "./actions";
 
-/** Shared by the Employees page and the Governance Canvas so both call the exact same server
- *  action and give identical confirmation/feedback. */
+/** Confirm-before-revoke dialog for one employee. */
 export function RevokeDialog({
   employee,
   open,

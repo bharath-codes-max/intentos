@@ -85,9 +85,7 @@ function CreateContractInline({
   );
 }
 
-/** The actual approve/deny-with-contract logic and UI, with no opinion about what contains it —
- *  used both inside a modal (Employees page) and inline in a Command Center canvas node. Every
- *  consumer calls the exact same server actions, so behavior can never drift between the two. */
+/** The actual approve/deny-with-contract logic and UI, separated from the modal that wraps it. */
 export function ApproveForm({
   request,
   contracts,
