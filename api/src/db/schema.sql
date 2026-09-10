@@ -267,3 +267,9 @@ create index if not exists idx_scope_requests_org_status on scope_requests(org_i
 alter table intent_contracts add column if not exists project_scope text;
 
 create index if not exists idx_org_invites_code on org_invites(code) where revoked_at is null;
+
+-- Revoking an employee already kills their live session and any device tokens immediately
+-- (both checked on every request), but without this, the same person could just log back in
+-- with their existing password and mint a brand-new session. This is the permanent record
+-- that blocks login itself, so "Revoke" actually means revoked.
+alter table users add column if not exists revoked_at timestamptz;

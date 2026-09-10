@@ -423,6 +423,7 @@ export interface Employee {
   email: string;
   role: "admin" | "employee";
   created_at: string;
+  revoked_at: string | null;
   connected_devices: string;
   last_activity_at: string | null;
 }

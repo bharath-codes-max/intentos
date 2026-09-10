@@ -52,9 +52,12 @@ export async function authRoutes(app: FastifyInstance) {
     if (!parsed.success) return reply.code(400).send({ error: "Invalid request body", details: parsed.error.flatten() });
     const { email, password } = parsed.data;
 
-    const [user] = await sql`select id, org_id, email, password_hash, role from users where email = ${email}`;
+    const [user] = await sql`select id, org_id, email, password_hash, role, revoked_at from users where email = ${email}`;
     if (!user || !verifyPassword(password, user.password_hash)) {
       return reply.code(401).send({ error: "Invalid email or password" });
+    }
+    if (user.revoked_at) {
+      return reply.code(403).send({ error: "Your access has been revoked. Contact your admin." });
     }
     const [org] = await sql`select name from orgs where id = ${user.org_id}`;
     const { rawToken, expiresAt } = await createSession(user.id);

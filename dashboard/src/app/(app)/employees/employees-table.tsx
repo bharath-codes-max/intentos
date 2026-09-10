@@ -39,24 +39,35 @@ function Row({ employee }: { employee: Employee }) {
           <span className="w-24 shrink-0 text-right text-[12px] text-muted-foreground">
             {timeAgo(employee.last_activity_at)}
           </span>
-          {employee.role !== "admin" && (
-            <Button
-              type="button"
-              variant="destructive"
-              size="sm"
-              disabled={pending}
-              onClick={() => {
-                if (confirm(`Revoke ${employee.email}'s access? All their connected devices will be disconnected.`)) {
-                  start(async () => {
-                    const result = await revokeEmployeeAction(employee.id);
-                    if (!result.ok) addToast({ title: "Couldn't revoke access", description: result.error, type: "error" });
-                  });
-                }
-              }}
-            >
-              {pending ? "Revoking…" : "Revoke"}
-            </Button>
-          )}
+          {employee.role !== "admin" &&
+            (employee.revoked_at ? (
+              <Chip label="Revoked" />
+            ) : (
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                disabled={pending}
+                onClick={() => {
+                  if (confirm(`Revoke ${employee.email}'s access? All their connected devices will be disconnected.`)) {
+                    start(async () => {
+                      const result = await revokeEmployeeAction(employee.id);
+                      if (!result.ok) {
+                        addToast({ title: "Couldn't revoke access", description: result.error, type: "error" });
+                        return;
+                      }
+                      addToast({
+                        title: "Access revoked",
+                        description: `${employee.email} can no longer sign in or connect devices.`,
+                        type: "success",
+                      });
+                    });
+                  }
+                }}
+              >
+                {pending ? "Revoking…" : "Revoke"}
+              </Button>
+            ))}
         </>
       }
     >
