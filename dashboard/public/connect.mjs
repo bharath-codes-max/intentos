@@ -21,7 +21,7 @@ import { join } from "node:path";
 import { execFile } from "node:child_process";
 
 const DASHBOARD_URL = process.env.INTENTOS_DASHBOARD_URL || "https://intentos-ecru.vercel.app";
-const API_URL = process.env.INTENTOS_API_URL || "https://intentos-api.onrender.com";
+const API_URL = process.env.INTENTOS_API_URL || "https://intentos-cqn3.onrender.com";
 
 const INTENTOS_DIR = join(homedir(), ".intentos");
 const HOOKS_DIR = join(INTENTOS_DIR, "hooks");
