@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { addToast } from "@/components/ui/toast";
 import { requestScopeChangeAction } from "./actions";
 
 const EXAMPLES = [
@@ -17,16 +18,7 @@ export function ScopeRequestForm() {
   const [project, setProject] = useState("");
   const [action, setAction] = useState<"include" | "exclude">("include");
   const [pending, start] = useTransition();
-  const [sent, setSent] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-
-  if (sent) {
-    return (
-      <p className="text-[12px] text-muted-foreground">
-        Request sent — your admin needs to approve it before it takes effect.
-      </p>
-    );
-  }
 
   return (
     <div className="space-y-2 border-t border-border pt-4">
@@ -95,9 +87,15 @@ export function ScopeRequestForm() {
               type="button"
               onClick={() => {
                 setConfirmOpen(false);
+                const submittedProject = project.trim();
                 start(async () => {
-                  await requestScopeChangeAction(project.trim(), action);
-                  setSent(true);
+                  await requestScopeChangeAction(submittedProject, action);
+                  setProject("");
+                  addToast({
+                    title: "Request sent",
+                    description: `Your admin needs to approve "${submittedProject}" before it takes effect. You can send another request anytime.`,
+                    type: "success",
+                  });
                 });
               }}
             >
