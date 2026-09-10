@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { addToast } from "@/components/ui/toast";
 import type { ScopeRequest, Contract } from "@/lib/api";
 import { resolveScopeRequestAction, createInlineContractAction } from "./actions";
@@ -85,21 +85,19 @@ function CreateContractInline({
   );
 }
 
-/** Approve/deny-with-contract flow for one scope request — shared by the Employees page and the
- *  Governance Canvas, so both call the exact same server actions and behave identically. Moving
- *  or extending this logic only ever needs to happen in this one place. */
-export function ApproveDialog({
+/** The actual approve/deny-with-contract logic and UI, with no opinion about what contains it —
+ *  used both inside a modal (Employees page) and inline in a Command Center canvas node. Every
+ *  consumer calls the exact same server actions, so behavior can never drift between the two. */
+export function ApproveForm({
   request,
   contracts,
-  open,
-  onOpenChange,
   onApproved,
+  onCancel,
 }: {
   request: ScopeRequest;
   contracts: Contract[] | SelectableContract[];
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   onApproved: () => void;
+  onCancel?: () => void;
 }) {
   const [contractId, setContractId] = useState<string>("");
   const [creatingNew, setCreatingNew] = useState(false);
@@ -117,81 +115,101 @@ export function ApproveDialog({
   }
 
   return (
+    <div className="space-y-3">
+      <p className="text-[12.5px] text-muted-foreground">
+        {needsContract
+          ? "Including a folder means it becomes governed — pick which Intent Contract's rules apply there, or create a new one just for this folder. It'll be scoped to just this folder, not your whole company."
+          : "Excluding a folder only removes governance from it, so no contract is needed."}
+      </p>
+
+      {needsContract && (
+        <div className="space-y-1.5">
+          <div className="text-[12px] font-medium text-foreground">Intent Contract for this folder</div>
+          {creatingNew ? (
+            <CreateContractInline
+              onCancel={() => setCreatingNew(false)}
+              onCreated={(contract) => {
+                setExtraContracts((prev) => [...prev, contract]);
+                setContractId(contract.id);
+                setCreatingNew(false);
+                addToast({ title: "Contract created", description: `"${contract.name}" is ready to assign.`, type: "success" });
+              }}
+            />
+          ) : (
+            <Select value={contractId} onValueChange={handleSelectChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue>{contractId ? allContracts.find((c) => c.id === contractId)?.name : "Choose a contract…"}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {allContracts.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                    {c.project_scope && <span className="ml-1.5 text-muted-foreground">(currently: {c.project_scope})</span>}
+                  </SelectItem>
+                ))}
+                <SelectItem value={NEW_CONTRACT_VALUE}>
+                  <span className="flex items-center gap-1.5">
+                    <PlusIcon className="size-3.5" /> Create new contract…
+                  </span>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+          {allContracts.length === 0 && !creatingNew && (
+            <p className="text-[12px] text-muted-foreground">
+              No active contracts yet — use &quot;Create new contract…&quot; above to make one for this folder.
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 pt-1">
+        {onCancel && (
+          <Button type="button" variant="outline" onClick={onCancel} disabled={pending}>
+            Cancel
+          </Button>
+        )}
+        <Button
+          type="button"
+          disabled={pending || creatingNew || (needsContract && !contractId)}
+          onClick={() =>
+            start(async () => {
+              const result = await resolveScopeRequestAction(request.id, true, needsContract ? contractId : undefined);
+              if (!result.ok) {
+                addToast({ title: "Couldn't approve", description: result.error, type: "error" });
+                return;
+              }
+              onApproved();
+            })
+          }
+        >
+          {pending ? "Approving…" : "Approve"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export function ApproveDialog({
+  request,
+  contracts,
+  open,
+  onOpenChange,
+  onApproved,
+}: {
+  request: ScopeRequest;
+  contracts: Contract[] | SelectableContract[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onApproved: () => void;
+}) {
+  return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Approve access to {request.project_identifier}</DialogTitle>
-          <DialogDescription>
-            {needsContract
-              ? "Including a folder means it becomes governed — pick which Intent Contract's rules apply there, or create a new one just for this folder. It'll be scoped to just this folder, not your whole company."
-              : "Excluding a folder only removes governance from it, so no contract is needed."}
-          </DialogDescription>
         </DialogHeader>
-
-        {needsContract && (
-          <div className="space-y-1.5">
-            <div className="text-[12px] font-medium text-foreground">Intent Contract for this folder</div>
-            {creatingNew ? (
-              <CreateContractInline
-                onCancel={() => setCreatingNew(false)}
-                onCreated={(contract) => {
-                  setExtraContracts((prev) => [...prev, contract]);
-                  setContractId(contract.id);
-                  setCreatingNew(false);
-                  addToast({ title: "Contract created", description: `"${contract.name}" is ready to assign.`, type: "success" });
-                }}
-              />
-            ) : (
-              <Select value={contractId} onValueChange={handleSelectChange}>
-                <SelectTrigger className="w-full">
-                  <SelectValue>
-                    {contractId ? allContracts.find((c) => c.id === contractId)?.name : "Choose a contract…"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {allContracts.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                      {c.project_scope && <span className="ml-1.5 text-muted-foreground">(currently: {c.project_scope})</span>}
-                    </SelectItem>
-                  ))}
-                  <SelectItem value={NEW_CONTRACT_VALUE}>
-                    <span className="flex items-center gap-1.5">
-                      <PlusIcon className="size-3.5" /> Create new contract…
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-            {allContracts.length === 0 && !creatingNew && (
-              <p className="text-[12px] text-muted-foreground">
-                No active contracts yet — use &quot;Create new contract…&quot; above to make one for this folder.
-              </p>
-            )}
-          </div>
-        )}
-
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            disabled={pending || creatingNew || (needsContract && !contractId)}
-            onClick={() =>
-              start(async () => {
-                const result = await resolveScopeRequestAction(request.id, true, needsContract ? contractId : undefined);
-                if (!result.ok) {
-                  addToast({ title: "Couldn't approve", description: result.error, type: "error" });
-                  return;
-                }
-                onApproved();
-              })
-            }
-          >
-            {pending ? "Approving…" : "Approve"}
-          </Button>
-        </DialogFooter>
+        <ApproveForm request={request} contracts={contracts} onApproved={onApproved} onCancel={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
   );

@@ -15,6 +15,7 @@ import {
   CheckIcon,
   ReloadIcon,
   Cross2Icon,
+  PlusIcon,
 } from "@radix-ui/react-icons";
 import { Button } from "@/components/ui/button";
 import { VerdictBadge } from "@/components/verdict-badge";
@@ -22,12 +23,12 @@ import { colorFor, initialsFromEmail } from "@/lib/color-hash";
 import type { Employee, AgentToken, ScopeRequest, Contract, Decision } from "@/lib/api";
 import { useCanvasControls } from "./use-canvas-controls";
 import { CanvasSurface, TONE_COLOR, TONE_BG, type Tone, type GenericNode, type GenericEdge } from "./canvas-shell";
-import { ApproveDialog, type SelectableContract } from "../employees/approve-request-dialog";
+import { ApproveForm, type SelectableContract } from "../employees/approve-request-dialog";
 import { RevokeDialog } from "../employees/revoke-employee-dialog";
 import { resolveScopeRequestAction, regenerateInviteAction } from "../employees/actions";
 import { addToast } from "@/components/ui/toast";
 
-type NodeKind = "employee" | "device" | "request" | "contract" | "invite";
+type NodeKind = "employee" | "device" | "request" | "contract" | "invite" | "resolve";
 
 interface OverviewNode extends GenericNode {
   kind: NodeKind;
@@ -47,6 +48,8 @@ interface OverviewNode extends GenericNode {
    *  actually emailed; this just labels the node so it reads as "invited: x@y.com" instead of
    *  a bare, anonymous "Invite Employee" box. Not persisted server-side. */
   inviteTarget?: string | null;
+  /** "resolve" nodes only — which pending request this one is attaching a contract to. */
+  resolveRequest?: ScopeRequest;
 }
 
 const PALETTE_ITEMS = [{ kind: "invite" as const, label: "Invite Employee", icon: PaperPlaneIcon }];
@@ -201,16 +204,39 @@ function InviteNodeBody({ node, onTrack }: { node: OverviewNode; onTrack: (email
   );
 }
 
+function ResolveNodeBody({
+  node,
+  contracts,
+  onApproved,
+}: {
+  node: OverviewNode;
+  contracts: SelectableContract[];
+  onApproved: () => void;
+}) {
+  if (!node.resolveRequest) return null;
+  return (
+    <div className="border-t border-white/[0.06] px-3.5 py-3" onMouseDown={(e) => e.stopPropagation()}>
+      <ApproveForm request={node.resolveRequest} contracts={contracts} onApproved={onApproved} />
+    </div>
+  );
+}
+
 function NodeCard({
   n,
   isSelected,
   onRemove,
   onTrackInvite,
+  onSpawnResolve,
+  resolveContracts,
+  onResolveApproved,
 }: {
   n: OverviewNode;
   isSelected: boolean;
   onRemove?: () => void;
   onTrackInvite?: (email: string) => void;
+  onSpawnResolve?: () => void;
+  resolveContracts?: SelectableContract[];
+  onResolveApproved?: () => void;
 }) {
   return (
     <div
@@ -234,6 +260,21 @@ function NodeCard({
             {n.statusLabel}
           </span>
         )}
+        {n.kind === "request" && onSpawnResolve && (
+          <button
+            type="button"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSpawnResolve();
+            }}
+            className="ml-1 flex size-5.5 shrink-0 items-center justify-center rounded-md bg-primary/15 text-primary transition-colors hover:bg-primary/25"
+            aria-label="Attach a contract to approve this request"
+            title="Attach a contract to approve this request"
+          >
+            <PlusIcon className="size-3.5" />
+          </button>
+        )}
         {n.composed && onRemove && (
           <button
             type="button"
@@ -250,6 +291,9 @@ function NodeCard({
         )}
       </div>
       {n.kind === "invite" && onTrackInvite && <InviteNodeBody node={n} onTrack={onTrackInvite} />}
+      {n.kind === "resolve" && resolveContracts && onResolveApproved && (
+        <ResolveNodeBody node={n} contracts={resolveContracts} onApproved={onResolveApproved} />
+      )}
     </div>
   );
 }
@@ -316,18 +360,6 @@ function DenyFromCanvas({ request, onDone }: { request: ScopeRequest; onDone: ()
   );
 }
 
-function ApproveFromCanvas({ request, contracts }: { request: ScopeRequest; contracts: SelectableContract[] }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <Button type="button" size="sm" onClick={() => setOpen(true)}>
-        Approve…
-      </Button>
-      <ApproveDialog request={request} contracts={contracts} open={open} onOpenChange={setOpen} onApproved={() => setOpen(false)} />
-    </>
-  );
-}
-
 export function OverviewCanvas({
   employees,
   devices,
@@ -350,7 +382,9 @@ export function OverviewCanvas({
   );
   const controls = useCanvasControls(worldW, worldH);
   const [composedNodes, setComposedNodes] = useState<OverviewNode[]>([]);
+  const [composedEdges, setComposedEdges] = useState<GenericEdge[]>([]);
   const nodes = useMemo(() => [...liveNodes, ...composedNodes], [liveNodes, composedNodes]);
+  const allEdges = useMemo(() => [...edges, ...composedEdges], [edges, composedEdges]);
   const selected = nodes.find((n) => n.id === controls.selectedId);
   const isEmpty = nodes.length === 0;
 
@@ -390,6 +424,42 @@ export function OverviewCanvas({
     setComposedNodes((prev) => prev.map((n) => (n.id === id ? { ...n, inviteTarget: email } : n)));
   }
 
+  function spawnResolveNode(request: ScopeRequest) {
+    const resolveId = `resolve:${request.id}`;
+    if (composedNodes.some((n) => n.id === resolveId)) {
+      controls.setSelectedId(resolveId);
+      return;
+    }
+    const requestNode = liveNodes.find((n) => n.id === `request:${request.id}`);
+    const x = (requestNode?.x ?? 0) + (requestNode?.width ?? 300) + 60;
+    const y = requestNode?.y ?? 0;
+    setComposedNodes((prev) => [
+      ...prev,
+      {
+        id: resolveId,
+        x,
+        y,
+        width: 300,
+        kind: "resolve",
+        icon: FileTextIcon,
+        title: request.requested_action === "include" ? "Attach a contract" : "Confirm exclude",
+        subtitle: request.project_identifier,
+        tone: "review",
+        composed: true,
+        resolveRequest: request,
+      },
+    ]);
+    setComposedEdges((prev) => [...prev, { from: `request:${request.id}`, to: resolveId, tone: "review", active: true }]);
+    controls.setSelectedId(resolveId);
+  }
+
+  function handleResolveApproved(resolveId: string) {
+    setComposedNodes((prev) => prev.filter((n) => n.id !== resolveId));
+    setComposedEdges((prev) => prev.filter((e) => e.to !== resolveId));
+    controls.setSelectedId(null);
+    addToast({ title: "Request approved", description: "It's now governed by the attached contract.", type: "success" });
+  }
+
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden rounded-lg border border-border shadow-[var(--shadow-md)]">
       <div className="flex w-[176px] shrink-0 flex-col gap-2 border-r border-border bg-panel p-3">
@@ -419,7 +489,7 @@ export function OverviewCanvas({
             worldW={worldW}
             worldH={worldH}
             nodes={nodes}
-            edges={edges}
+            edges={allEdges}
             controls={controls}
             resetKey={`${employees.length}-${devices.length}-${pendingRequests.length}-${contracts.length}`}
             onDrop={handleDrop}
@@ -429,6 +499,9 @@ export function OverviewCanvas({
                 isSelected={isSelected}
                 onRemove={n.composed ? () => removeComposedNode(n.id) : undefined}
                 onTrackInvite={n.kind === "invite" ? (email) => trackInvite(n.id, email) : undefined}
+                onSpawnResolve={n.kind === "request" && n.request ? () => spawnResolveNode(n.request!) : undefined}
+                resolveContracts={n.kind === "resolve" ? contracts : undefined}
+                onResolveApproved={n.kind === "resolve" ? () => handleResolveApproved(n.id) : undefined}
               />
             )}
             worldOverlay={
@@ -545,9 +618,25 @@ export function OverviewCanvas({
               <Field label="Requested" value={formatDate(selected.request.created_at)} />
             </div>
             <div className="mt-4 flex items-center gap-2 border-t border-border pt-4">
-              <DenyFromCanvas request={selected.request} onDone={() => {}} />
-              <ApproveFromCanvas request={selected.request} contracts={contracts} />
+              <DenyFromCanvas request={selected.request} onDone={() => controls.setSelectedId(null)} />
             </div>
+            <p className="mt-3 text-[11.5px] text-muted-foreground">
+              Click the <PlusIcon className="inline size-3 align-[-1px]" /> on this node to attach a contract and approve it.
+            </p>
+          </>
+        )}
+
+        {selected?.kind === "resolve" && (
+          <>
+            <div className="flex items-center gap-2">
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-[var(--status-review-bg)] text-[var(--status-review)]">
+                <FileTextIcon className="size-3.5" />
+              </span>
+              <p className="truncate text-[14px] font-semibold text-foreground">{selected.title}</p>
+            </div>
+            <p className="mt-1.5 text-[12px] text-muted-foreground">
+              Pick or create a contract directly on the node to finish approving this request.
+            </p>
           </>
         )}
 
