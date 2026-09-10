@@ -6,7 +6,7 @@ import { VerdictBadge, ExecutionStatusBadge } from "@/components/verdict-badge";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerBody } from "@/components/ui/drawer";
 import { Code, CodeBlock } from "@/components/ui/code";
 import { ToolIcon } from "@/components/tool-icon";
-import { colorFor } from "@/lib/color-hash";
+import { colorFor, initialsFromEmail } from "@/lib/color-hash";
 import { DataRow } from "@/components/ui/data-row";
 import { Chip } from "@/components/ui/chip";
 import { AvatarChip } from "@/components/ui/avatar-chip";
@@ -106,7 +106,10 @@ export function DecisionsTable({ decisions }: { decisions: Decision[] }) {
             {d.matched_rule && <Chip label={d.matched_rule} />}
             {!grouped && <VerdictBadge verdict={d.decision} />}
             <ExecutionStatusBadge status={d.approval_status ?? (d.decision === "allow" ? "executed" : "attempted")} />
-            <AvatarChip label={d.agent_label} />
+            <AvatarChip
+              label={d.employee_email ?? d.agent_label}
+              initials={d.employee_email ? initialsFromEmail(d.employee_email) : undefined}
+            />
             <span className="w-16 shrink-0 text-right text-[12px] text-muted-foreground">
               {timeAgo(d.created_at)}
             </span>
