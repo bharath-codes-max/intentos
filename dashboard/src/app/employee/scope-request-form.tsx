@@ -4,13 +4,21 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { requestScopeChangeAction } from "./actions";
+
+const EXAMPLES = [
+  { label: "Folder name", value: "my-project" },
+  { label: "Full local path fragment", value: "Users/yourname/code/my-project" },
+  { label: "Git repo identity", value: "github.com/your-org/my-project" },
+];
 
 export function ScopeRequestForm() {
   const [project, setProject] = useState("");
   const [action, setAction] = useState<"include" | "exclude">("include");
   const [pending, start] = useTransition();
   const [sent, setSent] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   if (sent) {
     return (
@@ -25,8 +33,20 @@ export function ScopeRequestForm() {
       <div className="text-[12px] font-medium text-foreground">Request a project be included or excluded</div>
       <p className="text-[11px] text-muted-foreground">
         Ask your admin to specifically govern (or ignore) one project/repo on this device.
-        Nothing changes until they approve it.
+        Nothing changes until they approve it. This must match text that actually appears in
+        the project&apos;s real folder path or git remote — it&apos;s matched literally, not guessed.
       </p>
+      <div className="rounded-md border border-border bg-muted/10 p-2.5 text-[11px] text-muted-foreground">
+        <span className="font-medium text-foreground">What to type — examples:</span>
+        <ul className="mt-1 space-y-0.5">
+          {EXAMPLES.map((ex) => (
+            <li key={ex.value}>
+              <span className="text-faint-foreground">{ex.label}:</span>{" "}
+              <code className="rounded bg-muted px-1 py-0.5 font-mono">{ex.value}</code>
+            </li>
+          ))}
+        </ul>
+      </div>
       <div className="flex items-center gap-2">
         <Input
           value={project}
@@ -43,20 +63,45 @@ export function ScopeRequestForm() {
             <SelectItem value="exclude">Exclude</SelectItem>
           </SelectContent>
         </Select>
-        <Button
-          type="button"
-          size="sm"
-          disabled={pending || !project.trim()}
-          onClick={() =>
-            start(async () => {
-              await requestScopeChangeAction(project.trim(), action);
-              setSent(true);
-            })
-          }
-        >
+        <Button type="button" size="sm" disabled={pending || !project.trim()} onClick={() => setConfirmOpen(true)}>
           {pending ? "Sending…" : "Request"}
         </Button>
       </div>
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Double-check before sending</DialogTitle>
+            <DialogDescription>
+              This text must match your real project&apos;s folder name or git remote exactly —
+              a typo means the request won&apos;t apply to anything, so verify it now.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-md border border-border bg-muted/20 p-3 text-[13px]">
+            <div className="text-muted-foreground">
+              You&apos;re asking to <span className="font-medium text-foreground">{action}</span> actions in:
+            </div>
+            <div className="mt-1 font-mono text-foreground">{project}</div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setConfirmOpen(false)}>
+              Let me fix it
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                setConfirmOpen(false);
+                start(async () => {
+                  await requestScopeChangeAction(project.trim(), action);
+                  setSent(true);
+                });
+              }}
+            >
+              Yes, send request
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
