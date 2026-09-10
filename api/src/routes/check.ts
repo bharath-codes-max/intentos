@@ -42,6 +42,25 @@ const EXECUTION_STATUS_FOR: Record<Verdict, "denied" | "waiting_approval" | "att
  * active contract exactly as before (e.g. .env still BLOCKs there); a folder out of scope
  * is invisible to Intentos, by design — not a lesser form of governed.
  */
+/** True if `term` appears in `projectKey` at a path-segment boundary (bounded by "/", or the
+ *  start/end of the string) rather than merely anywhere in the text. A plain substring check
+ *  would wrongly treat a folder literally named "no governance" as matching the term
+ *  "governance", since that word happens to appear inside the unrelated folder's name — this
+ *  requires the match to be a whole segment, so only the actual "governance" folder qualifies. */
+function matchesProjectIdentifier(projectKey: string, term: string): boolean {
+  const needle = term.toLowerCase();
+  if (needle === "") return false;
+  let fromIndex = 0;
+  while (true) {
+    const idx = projectKey.indexOf(needle, fromIndex);
+    if (idx === -1) return false;
+    const before = idx === 0 ? "/" : projectKey[idx - 1];
+    const after = idx + needle.length === projectKey.length ? "/" : projectKey[idx + needle.length];
+    if (before === "/" && after === "/") return true;
+    fromIndex = idx + 1;
+  }
+}
+
 function applyScope(
   token: { scope_mode: string; scope_projects: string[] },
   call: { project?: { normalized_repo?: string; repo_root?: string; cwd?: string } }
@@ -49,7 +68,7 @@ function applyScope(
   if (token.scope_mode === "all" || token.scope_projects.length === 0) return null;
 
   const projectKey = (call.project?.normalized_repo || call.project?.repo_root || call.project?.cwd || "").toLowerCase();
-  const matches = projectKey !== "" && token.scope_projects.some((p) => projectKey.includes(p.toLowerCase()));
+  const matches = projectKey !== "" && token.scope_projects.some((p) => matchesProjectIdentifier(projectKey, p));
 
   const outOfScope = token.scope_mode === "exclude" ? matches : token.scope_mode === "include_only" ? !matches : false;
   if (outOfScope) {
@@ -86,15 +105,18 @@ export async function checkRoute(app: FastifyInstance) {
     } else {
       const projectKey = (call.project?.normalized_repo || call.project?.repo_root || call.project?.cwd || "").toLowerCase();
       // A contract with a project_scope only governs actions whose project identity contains
-      // that text — same substring convention used everywhere else in this schema. A contract
-      // with no scope (every pre-existing one) stays org-wide, unaffected by this join.
-      const policies = (await sql`
-        select p.id, p.rule_name, p.condition, p.action, p.priority, p.reason
+      // that text at a path-segment boundary (see matchesProjectIdentifier) — filtered here in
+      // app code rather than SQL LIKE so the same boundary rule applies as in applyScope above.
+      // A contract with no scope (every pre-existing one) stays org-wide, unaffected by this.
+      const allPolicies = (await sql`
+        select p.id, p.rule_name, p.condition, p.action, p.priority, p.reason, c.project_scope
         from policies p
         left join intent_contracts c on c.id = p.contract_id
         where p.org_id = ${token.org_id} and p.active = true
-          and (c.project_scope is null or ${projectKey} like '%' || lower(c.project_scope) || '%')
-      `) as unknown as PolicyRow[];
+      `) as unknown as (PolicyRow & { project_scope: string | null })[];
+      const policies = allPolicies
+        .filter((p) => p.project_scope === null || matchesProjectIdentifier(projectKey, p.project_scope))
+        .map(({ project_scope: _project_scope, ...rest }) => rest as PolicyRow);
       result = evaluate(call, policies);
     }
     const latencyMs = Date.now() - started;
