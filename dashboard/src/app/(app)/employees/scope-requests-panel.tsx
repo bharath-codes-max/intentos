@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { addToast } from "@/components/ui/toast";
 import type { ScopeRequest, Contract } from "@/lib/api";
 import { resolveScopeRequestAction } from "./actions";
 
@@ -72,7 +73,11 @@ function ApproveDialog({
             disabled={pending || (needsContract && !contractId)}
             onClick={() =>
               start(async () => {
-                await resolveScopeRequestAction(request.id, true, needsContract ? contractId : undefined);
+                const result = await resolveScopeRequestAction(request.id, true, needsContract ? contractId : undefined);
+                if (!result.ok) {
+                  addToast({ title: "Couldn't approve", description: result.error, type: "error" });
+                  return;
+                }
                 onApproved();
               })
             }
@@ -111,7 +116,12 @@ function Row({ request, contracts }: { request: ScopeRequest; contracts: Contrac
             variant="destructive"
             size="sm"
             disabled={pending}
-            onClick={() => start(() => resolveScopeRequestAction(request.id, false))}
+            onClick={() =>
+              start(async () => {
+                const result = await resolveScopeRequestAction(request.id, false);
+                if (!result.ok) addToast({ title: "Couldn't deny", description: result.error, type: "error" });
+              })
+            }
           >
             Deny
           </Button>

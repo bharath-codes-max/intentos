@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { CopyIcon, CheckIcon, ReloadIcon } from "@radix-ui/react-icons";
 import { Button } from "@/components/ui/button";
+import { addToast } from "@/components/ui/toast";
 import { regenerateInviteAction } from "./actions";
 
 export function InviteLinkCard({ inviteUrl }: { inviteUrl: string }) {
@@ -39,7 +40,10 @@ export function InviteLinkCard({ inviteUrl }: { inviteUrl: string }) {
           disabled={pending}
           onClick={() => {
             if (confirm("Regenerate the invite link? The old link will stop working immediately.")) {
-              start(() => regenerateInviteAction());
+              start(async () => {
+                const result = await regenerateInviteAction();
+                if (!result.ok) addToast({ title: "Couldn't regenerate link", description: result.error, type: "error" });
+              });
             }
           }}
         >

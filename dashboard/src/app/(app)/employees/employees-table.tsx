@@ -6,6 +6,7 @@ import { DataRow } from "@/components/ui/data-row";
 import { Chip } from "@/components/ui/chip";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/common/empty-state";
+import { addToast } from "@/components/ui/toast";
 import { colorFor } from "@/lib/color-hash";
 import type { Employee } from "@/lib/api";
 import { revokeEmployeeAction } from "./actions";
@@ -46,7 +47,10 @@ function Row({ employee }: { employee: Employee }) {
               disabled={pending}
               onClick={() => {
                 if (confirm(`Revoke ${employee.email}'s access? All their connected devices will be disconnected.`)) {
-                  start(() => revokeEmployeeAction(employee.id));
+                  start(async () => {
+                    const result = await revokeEmployeeAction(employee.id);
+                    if (!result.ok) addToast({ title: "Couldn't revoke access", description: result.error, type: "error" });
+                  });
                 }
               }}
             >
