@@ -4,11 +4,47 @@ import { useState, useTransition } from "react";
 import { CopyIcon, CheckIcon, ReloadIcon } from "@radix-ui/react-icons";
 import { Button } from "@/components/ui/button";
 import { addToast } from "@/components/ui/toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { regenerateInviteAction } from "./actions";
+
+function RegenerateDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const [pending, start] = useTransition();
+
+  function handleRegenerate() {
+    start(async () => {
+      const result = await regenerateInviteAction();
+      if (!result.ok) {
+        addToast({ title: "Couldn't regenerate link", description: result.error, type: "error" });
+        return;
+      }
+      onOpenChange(false);
+      addToast({ title: "Invite link regenerated", description: "The old link no longer works.", type: "success" });
+    });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Regenerate the invite link?</DialogTitle>
+          <DialogDescription>The old link will stop working immediately — anyone using it will need the new one.</DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
+            Cancel
+          </Button>
+          <Button type="button" onClick={handleRegenerate} disabled={pending}>
+            {pending ? "Regenerating…" : "Regenerate"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export function InviteLinkCard({ inviteUrl }: { inviteUrl: string }) {
   const [copied, setCopied] = useState(false);
-  const [pending, start] = useTransition();
+  const [regenOpen, setRegenOpen] = useState(false);
 
   return (
     <div className="space-y-3">
@@ -33,22 +69,10 @@ export function InviteLinkCard({ inviteUrl }: { inviteUrl: string }) {
         >
           {copied ? <CheckIcon /> : <CopyIcon />}
         </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          disabled={pending}
-          onClick={() => {
-            if (confirm("Regenerate the invite link? The old link will stop working immediately.")) {
-              start(async () => {
-                const result = await regenerateInviteAction();
-                if (!result.ok) addToast({ title: "Couldn't regenerate link", description: result.error, type: "error" });
-              });
-            }
-          }}
-        >
-          <ReloadIcon /> {pending ? "Regenerating…" : "Regenerate"}
+        <Button type="button" size="sm" variant="outline" onClick={() => setRegenOpen(true)}>
+          <ReloadIcon /> Regenerate
         </Button>
+        <RegenerateDialog open={regenOpen} onOpenChange={setRegenOpen} />
       </div>
     </div>
   );
