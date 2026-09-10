@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { CodeIcon, CheckCircledIcon, ChevronRightIcon } from "@radix-ui/react-icons";
+import { CodeIcon, ChevronRightIcon } from "@radix-ui/react-icons";
 import { VerdictBadge } from "@/components/verdict-badge";
+import { ClaudeIcon } from "@/components/agent-icons";
 
 type Step = {
   narration: string;
@@ -77,7 +78,7 @@ export function AuthShowcase() {
             {isLast ? "Resolved" : `Step ${step + 1} of ${STEPS.length}`}
           </span>
           <span className="flex items-center gap-1.5 rounded-full border border-[color-mix(in_oklch,var(--status-allow),transparent_65%)] bg-[var(--status-allow-bg)] px-2.5 py-1 text-[11px] font-medium text-foreground">
-            <CheckCircledIcon className="size-3" /> Claude Code connected
+            <ClaudeIcon size={12} /> Claude Code connected
           </span>
         </div>
 
