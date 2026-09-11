@@ -43,5 +43,7 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|hooks/|install.sh|connect.mjs).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|hooks/|install.sh|connect.mjs|install-codex-desktop.sh|connect-codex-desktop.mjs|uninstall-codex-desktop.sh).*)",
+  ],
 };
