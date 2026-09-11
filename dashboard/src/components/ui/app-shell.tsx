@@ -3,7 +3,7 @@ import { TopNav } from "@/components/top-nav";
 import { Toaster } from "@/components/ui/toast";
 import type { Org } from "@/lib/api";
 
-/** The persistent app frame: a floating top nav bar over a centered, editorial-width content
+/** The persistent app frame: a full-width top nav bar over a centered, editorial-width content
  *  column — every page renders inside that column. */
 export function AppShell({
   orgs,

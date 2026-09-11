@@ -17,14 +17,14 @@ export function TopNav({ orgs, currentOrgId }: { orgs: Org[]; currentOrgId: stri
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
   return (
-    <header className="sticky top-0 z-30 px-3 pt-3 pb-2 sm:px-5">
-      <nav className="mx-auto flex max-w-[1400px] items-center gap-1 rounded-2xl border border-white/[0.08] bg-black/75 px-3 py-2 shadow-[0_12px_40px_rgba(0,0,0,0.55)] backdrop-blur-xl sm:gap-2 sm:px-4">
-        <Link href="/" className="flex shrink-0 items-center gap-2 pr-1">
+    <header className="sticky top-0 z-30 border-b border-white/10 bg-black">
+      <nav className="mx-auto flex max-w-[1400px] items-center gap-1 px-3 py-3.5 sm:gap-2 sm:px-4">
+        <Link href="/" className="flex shrink-0 items-center gap-2 pr-1 text-foreground">
           <Logo size={22} />
-          <span className="text-[15px] font-bold tracking-tight text-foreground">Intentos</span>
+          <span className="text-[16px] font-semibold tracking-tight">Intentos</span>
         </Link>
 
-        <ul className="hidden min-w-0 flex-1 items-center gap-0.5 overflow-x-auto lg:flex">
+        <ul className="hidden min-w-0 flex-1 items-center gap-0.5 overflow-x-auto pl-4 lg:flex">
           {ALL_NAV.map((item) => {
             const active = isActive(item.href);
             return (
@@ -32,8 +32,8 @@ export function TopNav({ orgs, currentOrgId }: { orgs: Org[]; currentOrgId: stri
                 <Link
                   href={item.href}
                   className={cn(
-                    "flex items-center rounded-full px-2.5 py-1.5 text-[13px] font-medium whitespace-nowrap transition-colors",
-                    active ? "bg-white/[0.08] text-foreground" : "text-[rgba(235,235,245,0.6)] hover:text-[rgba(235,235,245,0.9)]"
+                    "flex items-center rounded-md px-2.5 py-1.5 font-mono text-[13px] whitespace-nowrap transition-colors",
+                    active ? "text-foreground" : "text-[rgba(235,235,245,0.5)] hover:text-[rgba(235,235,245,0.85)]"
                   )}
                 >
                   {item.label}
@@ -51,7 +51,7 @@ export function TopNav({ orgs, currentOrgId }: { orgs: Org[]; currentOrgId: stri
         <button
           type="button"
           onClick={() => setMobileOpen((v) => !v)}
-          className="ml-auto flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-white/[0.08] hover:text-foreground lg:hidden"
+          className="ml-auto flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.08] hover:text-foreground lg:hidden"
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
         >
           {mobileOpen ? <Cross1Icon className="size-4" /> : <HamburgerMenuIcon className="size-4" />}
@@ -59,7 +59,7 @@ export function TopNav({ orgs, currentOrgId }: { orgs: Org[]; currentOrgId: stri
       </nav>
 
       {mobileOpen && (
-        <div className="mx-auto mt-2 max-w-6xl rounded-2xl border border-white/[0.08] bg-black/90 p-3 shadow-[0_12px_40px_rgba(0,0,0,0.55)] backdrop-blur-xl lg:hidden">
+        <div className="border-t border-white/10 bg-black p-3 lg:hidden">
           <ul className="flex flex-col gap-0.5">
             {ALL_NAV.map((item) => {
               const active = isActive(item.href);
