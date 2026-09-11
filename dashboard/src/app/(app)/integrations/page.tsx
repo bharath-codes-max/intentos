@@ -2,13 +2,11 @@ import { headers } from "next/headers";
 import { CodeIcon } from "@radix-ui/react-icons";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ClaudeIcon } from "@/components/agent-icons";
+import { ClaudeIcon, CodexIcon } from "@/components/agent-icons";
 import { listTokens, API_ORIGIN } from "@/lib/api";
 import { getCurrentOrgId } from "@/lib/current-org";
-import { CopyCommand } from "./copy-command";
-import { RevokeButton } from "./revoke-button";
 import { AgentPicker } from "./agent-picker";
+import { AgentConnectionCard } from "./agent-connection-card";
 
 export default async function IntegrationsPage({
   searchParams,
@@ -18,20 +16,22 @@ export default async function IntegrationsPage({
   const { welcome } = await searchParams;
   const orgId = await getCurrentOrgId();
   const tokens = await listTokens(orgId);
-  const claudeCodeTokens = tokens.filter((t) => t.agent_type === "claude-code" && !t.revoked_at);
-  const connected = claudeCodeTokens.length > 0;
 
   const h = await headers();
   const host = h.get("host") ?? "localhost:3000";
   const proto = host.startsWith("localhost") ? "http" : "https";
   const origin = `${proto}://${host}`;
-  const installCommand = `curl -fsSL ${origin}/install.sh | bash`;
+
+  const claudeTokens = tokens.filter((t) => t.agent_type === "claude-code" && !t.revoked_at);
+  const codexTokens = tokens.filter((t) => t.agent_type === "codex" && !t.revoked_at);
+  const codexDesktopTokens = codexTokens.filter((t) => t.label.includes("(Desktop)"));
+  const codexCliTokens = codexTokens.filter((t) => !t.label.includes("(Desktop)"));
 
   return (
     <div className="space-y-6">
       {welcome && (
         <div className="rounded-lg border border-[color-mix(in_oklch,var(--status-allow),transparent_65%)] bg-[var(--status-allow-bg)] px-4 py-3 text-[13px] text-foreground">
-          Account created. Connect Claude Code below to start governing its actions.
+          Account created. Connect an agent below to start governing its actions.
         </div>
       )}
       <PageHeader
@@ -44,75 +44,66 @@ export default async function IntegrationsPage({
       <Card>
         <CardContent className="pt-6">
           <AgentPicker
-            claudeCodeContent={
-              <div className="space-y-5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex size-10 items-center justify-center rounded-lg border border-border bg-muted/40">
-                      <ClaudeIcon size={20} />
+            content={{
+              "claude-code": (
+                <AgentConnectionCard
+                  icon={<ClaudeIcon size={20} />}
+                  name="Claude Code"
+                  description="Anthropic's CLI coding agent"
+                  connectedTokens={claudeTokens}
+                  installCommand={`curl -fsSL ${origin}/install.sh | bash`}
+                  advanced={
+                    <>
+                      <div>Hook events wired: SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, SessionEnd</div>
+                      <div>Config: ~/.claude/settings.json (global) · Credential: ~/.intentos/token</div>
+                      <div>API: {API_ORIGIN}</div>
+                    </>
+                  }
+                />
+              ),
+              "codex-cli": (
+                <AgentConnectionCard
+                  icon={<CodexIcon size={20} />}
+                  name="Codex — CLI / VS Code"
+                  description="OpenAI's Codex CLI, and its VS Code integrated-terminal usage (same binary)"
+                  connectedTokens={codexCliTokens}
+                  installCommand={`curl -fsSL ${origin}/install-codex.sh | bash`}
+                  advanced={
+                    <>
+                      <div>Hook events wired: SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, SessionEnd</div>
+                      <div>Config: ~/.codex/hooks.json (global) · Credential inline in the hook command</div>
+                      <div>
+                        First real action may prompt a one-time trust approval for the changed hooks.json — this is
+                        expected and only happens once per machine.
+                      </div>
+                    </>
+                  }
+                />
+              ),
+              "codex-desktop": (
+                <AgentConnectionCard
+                  icon={<CodexIcon size={20} />}
+                  name="ChatGPT Desktop (Codex)"
+                  description="The ChatGPT desktop app's built-in Codex agent"
+                  connectedTokens={codexDesktopTokens}
+                  installCommand={`curl -fsSL ${origin}/install-codex-desktop.sh | bash`}
+                  extraNote={
+                    <div className="rounded-lg border border-[color-mix(in_oklch,var(--status-review),transparent_65%)] bg-[var(--status-review-bg)] px-4 py-3 text-[13px] text-foreground">
+                      macOS only. This installs two small background services that keep Desktop routed through a
+                      governed connection, and disables Desktop&apos;s own Scheduled-task automation tools (everyday
+                      chat and file actions are unaffected). Fully removable — see the Advanced section.
                     </div>
-                    <div>
-                      <div className="text-[15px] font-semibold text-foreground">Claude Code</div>
-                      <div className="text-[13px] text-muted-foreground">Anthropic&apos;s CLI coding agent</div>
-                    </div>
-                  </div>
-                  <span
-                    className={`rounded-full border px-3 py-1 text-[12px] font-medium ${
-                      connected
-                        ? "border-[color-mix(in_oklch,var(--status-allow),transparent_65%)] bg-[var(--status-allow-bg)] text-foreground"
-                        : "border-border bg-muted/40 text-muted-foreground"
-                    }`}
-                  >
-                    {connected ? "Connected" : "Not connected"}
-                  </span>
-                </div>
-
-                {!connected ? (
-                  <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-4">
-                    <div className="text-[13px] font-medium text-foreground">Connect in one step</div>
-                    <p className="text-[13px] text-muted-foreground">
-                      Run this on the machine where you use Claude Code. It installs the connector, opens your
-                      browser to approve the device, and works in every project on this machine automatically —
-                      no per-project setup.
-                    </p>
-                    <CopyCommand command={installCommand} />
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <ul className="divide-y divide-border rounded-lg border border-border">
-                      {claudeCodeTokens.map((t) => (
-                        <li key={t.id} className="flex items-center justify-between px-4 py-3">
-                          <div>
-                            <div className="text-[13px] font-medium text-foreground">{t.label}</div>
-                            <div className="text-[12px] text-muted-foreground">
-                              Connected {new Date(t.created_at).toLocaleDateString()}
-                            </div>
-                          </div>
-                          <RevokeButton tokenId={t.id} />
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="flex items-center justify-between rounded-lg border border-border bg-muted/20 p-4">
-                      <p className="text-[13px] text-muted-foreground">
-                        Add another machine? Run <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[12px]">{installCommand}</code> there.
-                      </p>
-                      <a href="/test">
-                        <Button variant="outline" size="sm">Test Claude Code</Button>
-                      </a>
-                    </div>
-                  </div>
-                )}
-
-                <details className="text-[12px] text-muted-foreground">
-                  <summary className="cursor-pointer select-none">Advanced</summary>
-                  <div className="mt-2 space-y-1 rounded-lg border border-border bg-muted/10 p-3 font-mono text-[11px]">
-                    <div>Hook events wired: SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, SessionEnd</div>
-                    <div>Config: ~/.claude/settings.json (global) · Credential: ~/.intentos/token</div>
-                    <div>API: {API_ORIGIN}</div>
-                  </div>
-                </details>
-              </div>
-            }
+                  }
+                  advanced={
+                    <>
+                      <div>Runs an external `codex app-server`, managed by a LaunchAgent, that Desktop connects to</div>
+                      <div>Config: ~/.codex/hooks.json (shared with CLI) + a codex_app stub in ~/.codex/config.toml</div>
+                      <div>Uninstall: curl -fsSL {origin}/uninstall-codex-desktop.sh | bash</div>
+                    </>
+                  }
+                />
+              ),
+            }}
           />
         </CardContent>
       </Card>
