@@ -20,6 +20,12 @@ function userCode(): string {
 const StartBody = z.object({
   agent_type: z.enum(["claude-code", "cursor", "github-copilot", "codex"]).default("claude-code"),
   hostname: z.string().max(200).optional(),
+  // Chosen up front on the Integrations page, before the install command is even shown —
+  // baked into the resulting token at approval time so it's correctly scoped from the first
+  // run, not "all" and fixed later. Omitted (old installers, or "govern everything") keeps
+  // the existing default-all behavior exactly as before.
+  scope_mode: z.enum(["all", "include_only", "exclude"]).default("all"),
+  scope_projects: z.array(z.string().min(1)).max(50).default([]),
 });
 
 const ApproveBody = z.object({ user_code: z.string().min(1) });
@@ -29,15 +35,15 @@ export async function devicesRoutes(app: FastifyInstance) {
   app.post("/v1/devices/start", async (req, reply) => {
     const parsed = StartBody.safeParse(req.body ?? {});
     if (!parsed.success) return reply.code(400).send({ error: "Invalid request body", details: parsed.error.flatten() });
-    const { agent_type, hostname } = parsed.data;
+    const { agent_type, hostname, scope_mode, scope_projects } = parsed.data;
 
     const deviceCode = randomBytes(24).toString("hex");
     const code = userCode();
     const expiresAt = new Date(Date.now() + DEVICE_CODE_TTL_MS);
 
     await sql`
-      insert into device_links (device_code, user_code, agent_type, hostname, expires_at)
-      values (${deviceCode}, ${code}, ${agent_type}, ${hostname ?? null}, ${expiresAt})
+      insert into device_links (device_code, user_code, agent_type, hostname, expires_at, scope_mode, scope_projects)
+      values (${deviceCode}, ${code}, ${agent_type}, ${hostname ?? null}, ${expiresAt}, ${scope_mode}, ${scope_projects})
     `;
 
     return reply.code(201).send({
@@ -53,7 +59,7 @@ export async function devicesRoutes(app: FastifyInstance) {
   app.get("/v1/devices/by-code/:user_code", { preHandler: requireUser }, async (req, reply) => {
     const { user_code } = req.params as { user_code: string };
     const [row] = await sql`
-      select user_code, agent_type, hostname, status, expires_at
+      select user_code, agent_type, hostname, status, expires_at, scope_mode, scope_projects
       from device_links where user_code = ${user_code.toUpperCase()}
     `;
     if (!row) return reply.code(404).send({ error: "No pending connection with that code" });
@@ -72,7 +78,7 @@ export async function devicesRoutes(app: FastifyInstance) {
     const code = parsed.data.user_code.toUpperCase();
 
     const [pending] = await sql`
-      select id, agent_type, hostname, status, expires_at from device_links where user_code = ${code}
+      select id, agent_type, hostname, status, expires_at, scope_mode, scope_projects from device_links where user_code = ${code}
     `;
     if (!pending) return reply.code(404).send({ error: "No pending connection with that code" });
     if (pending.status !== "pending") return reply.code(409).send({ error: `This connection is already ${pending.status}` });
@@ -84,8 +90,8 @@ export async function devicesRoutes(app: FastifyInstance) {
     const rawToken = `sk-${pending.agent_type}-${randomBytes(16).toString("hex")}`;
     const label = pending.hostname ? `${pending.agent_type} — ${pending.hostname}` : `${pending.agent_type} — device`;
     const [token] = await sql`
-      insert into agent_tokens (org_id, token_hash, agent_type, label, owner_user_id, owner_email)
-      values (${user.org_id}, ${hashToken(rawToken)}, ${pending.agent_type}, ${label}, ${user.user_id}, ${user.email})
+      insert into agent_tokens (org_id, token_hash, agent_type, label, owner_user_id, owner_email, scope_mode, scope_projects)
+      values (${user.org_id}, ${hashToken(rawToken)}, ${pending.agent_type}, ${label}, ${user.user_id}, ${user.email}, ${pending.scope_mode}, ${pending.scope_projects})
       returning id
     `;
     await sql`

@@ -1,15 +1,17 @@
 #!/usr/bin/env node
 /**
- * Intentos ChatGPT Desktop (Codex) connector installer — macOS only.
+ * Intentos Codex connector installer — CLI, VS Code integrated terminal, and (macOS only)
+ * ChatGPT Desktop, all from one run.
  *
  * Run via: curl -fsSL <dashboard>/install-codex-desktop.sh | bash
  *
- * ChatGPT Desktop runs Codex through its OWN app-server process rather than reading
- * ~/.codex/hooks.json directly the way the CLI does — so governing it needs more than a
- * hook file. This installer sets up the full mechanism confirmed to work in practice:
+ * Always does, on every platform:
+ *   1. Downloads the shared hook script, runs device approval, writes the global
+ *      ~/.codex/hooks.json — this alone governs the `codex` CLI and VS Code's integrated
+ *      terminal, since both run the identical binary and read the same config file.
  *
- *   1. Everything connect-codex.mjs does: downloads the hook script, runs device approval,
- *      writes the global ~/.codex/hooks.json (the CLI and VS Code Terminal use this too).
+ * On macOS only, additionally sets up ChatGPT Desktop governance, since Desktop runs Codex
+ * through its OWN app-server process rather than reading hooks.json directly:
  *   2. A background app-server process, managed by a LaunchAgent, that Desktop is pointed
  *      at instead of the private process it would otherwise spawn for itself.
  *   3. A disabled stub for [mcp_servers.codex_app] in ~/.codex/config.toml — without this,
@@ -19,14 +21,18 @@
  *      waits for the app-server to actually answer healthy (not just "started"), and only
  *      then launches Desktop — correcting for macOS's own session-restore racing ahead of us.
  *
- * IMPORTANT — what this trades away: disabling the codex_app stub above also disables
+ * On Windows/Linux, steps 2-4 are skipped with a printed note — CLI/VS Code governance from
+ * step 1 still applies. The dedicated Codex VS Code EXTENSION panel (distinct from just using
+ * VS Code's terminal) is not covered by anything here — untested, not claimed as certified.
+ *
+ * IMPORTANT — what step 3 trades away on macOS: disabling the codex_app stub also disables
  * Desktop's own automation features (Scheduled tasks' underlying create_thread/
  * automation_update tools, if they depend on it — this was not fully characterized in
  * testing). Everyday chat, file actions, and approvals are unaffected.
  *
- * This installs two background services (LaunchAgents) that run at every login. Nothing
- * here is hidden — see the printed summary at the end, and uninstall-codex-desktop.sh to
- * remove everything this script adds.
+ * On macOS this installs two background services (LaunchAgents) that run at every login.
+ * Nothing here is hidden — see the printed summary at the end, and
+ * uninstall-codex-desktop.sh to remove everything this script adds.
  */
 
 import { writeFileSync, mkdirSync, readFileSync, existsSync, appendFileSync, copyFileSync } from "node:fs";
@@ -34,10 +40,7 @@ import { homedir, hostname, platform } from "node:os";
 import { join } from "node:path";
 import { execFile, execFileSync } from "node:child_process";
 
-if (platform() !== "darwin") {
-  console.error("The ChatGPT Desktop connector currently only supports macOS.");
-  process.exit(1);
-}
+const IS_MACOS = platform() === "darwin";
 
 const DASHBOARD_URL = process.env.INTENTOS_DASHBOARD_URL || "https://intentos-ecru.vercel.app";
 const API_URL = process.env.INTENTOS_API_URL || "https://intentos-cqn3.onrender.com";
@@ -225,17 +228,31 @@ function writeLaunchAgents(scriptPath) {
 }
 
 async function main() {
-  console.log("Intentos — connecting ChatGPT Desktop (Codex)…\n");
+  console.log(`Intentos — connecting Codex (CLI / VS Code${IS_MACOS ? " / ChatGPT Desktop" : ""})…\n`);
 
   mkdirSync(HOOKS_DIR, { recursive: true });
   await downloadTo(`${DASHBOARD_URL}/hooks/intentos-hook.mjs`, join(HOOKS_DIR, "intentos-hook.mjs"));
   await downloadTo(`${DASHBOARD_URL}/hooks/project-identity.mjs`, join(HOOKS_DIR, "project-identity.mjs"));
   console.log("✓ Connector installed to ~/.intentos/hooks");
 
+  // Set on the Integrations page before this command is generated — see the include/exclude
+  // step there. Baked into the token at approval time; "all" (the default) preserves the
+  // exact prior behavior for anyone running an older, bare install command.
+  const scopeMode = process.env.INTENTOS_SCOPE_MODE || "all";
+  const scopeProjects = (process.env.INTENTOS_SCOPE_PROJECTS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
   const startRes = await fetch(`${API_URL}/v1/devices/start`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ agent_type: "codex", hostname: `${hostname()} (Desktop)` }),
+    body: JSON.stringify({
+      agent_type: "codex",
+      hostname: hostname(),
+      scope_mode: scopeMode,
+      scope_projects: scopeProjects,
+    }),
   });
   if (!startRes.ok) throw new Error(`Could not start device connection (${startRes.status})`);
   const { device_code, user_code, interval } = await startRes.json();
@@ -277,14 +294,23 @@ async function main() {
 
   const existingHooks = existsSync(CODEX_HOOKS_FILE) ? JSON.parse(readFileSync(CODEX_HOOKS_FILE, "utf8")) : {};
   writeFileSync(CODEX_HOOKS_FILE, JSON.stringify(mergeHookBlock(existingHooks, token), null, 2));
-  console.log("✓ Codex global hooks updated (~/.codex/hooks.json)");
+  console.log("✓ Codex global hooks updated (~/.codex/hooks.json) — governs the CLI and VS Code's integrated terminal");
+
+  if (!IS_MACOS) {
+    console.log(
+      "\nCodex CLI / VS Code Terminal is connected. ChatGPT Desktop governance is macOS-only and was\n" +
+      "skipped on this platform — everything else above is active. Open `codex` in any project to try it;\n" +
+      "the first real action may prompt a one-time trust approval for the changed hooks.json."
+    );
+    return;
+  }
 
   ensureCodexAppStub();
   const scriptPath = writeOrchestratorScript();
   writeLaunchAgents(scriptPath);
 
   console.log(
-    "\nChatGPT Desktop is now connected. What changed on this Mac:\n" +
+    "\nCodex is now connected — CLI, VS Code's integrated terminal, and ChatGPT Desktop. What changed on this Mac:\n" +
     "  • Two background services (LaunchAgents) run at every login — the governed Codex\n" +
     "    app-server, and a launcher that starts Desktop only after it's confirmed healthy.\n" +
     "  • ~/.codex/config.toml has one added entry disabling Desktop's own automation tools\n" +

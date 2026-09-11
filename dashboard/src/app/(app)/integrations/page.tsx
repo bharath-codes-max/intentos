@@ -5,7 +5,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { listTokens, API_ORIGIN } from "@/lib/api";
 import { getCurrentOrgId } from "@/lib/current-org";
 import { AgentPicker, type SurfaceStatus } from "./agent-picker";
-import { InstallCard, NotCertifiedCard } from "./agent-connection-card";
+import { InstallCard } from "./agent-connection-card";
+
+function CoverageRow({ name, status }: { name: string; status: "certified" | "beta" | "needs_certification" }) {
+  const meta = {
+    certified: { label: "Certified", className: "text-status-allow" },
+    beta: { label: "Beta", className: "text-status-review" },
+    needs_certification: { label: "Needs certification", className: "text-muted-foreground" },
+  }[status];
+  return (
+    <div className="flex items-center justify-between">
+      <span>{name}</span>
+      <span className={meta.className}>{meta.label}</span>
+    </div>
+  );
+}
 
 export default async function IntegrationsPage({
   searchParams,
@@ -21,24 +35,12 @@ export default async function IntegrationsPage({
   const proto = host.startsWith("localhost") ? "http" : "https";
   const origin = `${proto}://${host}`;
 
-  // Claude Code's connector writes one shared global config (~/.claude/settings.json) used by
-  // both the CLI and the VS Code extension — so a "claude-code" token IS the CLI's connection,
-  // and the VS Code extension likely rides on the same file. "Likely" is doing real work in that
-  // sentence: that hasn't been empirically tested, so its status stays "needs certification"
-  // regardless of whether a token exists, per the rule of not claiming more than was verified.
   const claudeTokens = tokens.filter((t) => t.agent_type === "claude-code" && !t.revoked_at);
-
   const codexTokens = tokens.filter((t) => t.agent_type === "codex" && !t.revoked_at);
-  const codexDesktopTokens = codexTokens.filter((t) => t.label.includes("(Desktop)"));
-  const codexCliTokens = codexTokens.filter((t) => !t.label.includes("(Desktop)"));
 
   const statuses: Record<string, SurfaceStatus> = {
-    "claude-cli": claudeTokens.length > 0 ? "connected" : "not_connected",
-    "claude-vscode": "needs_certification",
-    "claude-desktop": "needs_certification",
-    "codex-cli": codexCliTokens.length > 0 ? "connected" : "not_connected",
-    "codex-vscode": "needs_certification",
-    "codex-desktop": "beta",
+    claude: claudeTokens.length > 0 ? "connected" : "not_connected",
+    codex: codexTokens.length > 0 ? "connected" : "not_connected",
   };
 
   return (
@@ -60,13 +62,18 @@ export default async function IntegrationsPage({
           <AgentPicker
             statuses={statuses}
             content={{
-              "claude-cli": (
+              claude: (
                 <InstallCard
-                  description="Anthropic's CLI coding agent, run standalone in a terminal."
+                  description="One command governs Claude Code everywhere on this device — the CLI, and its VS Code extension, which shares the same global config file."
                   connectedTokens={claudeTokens}
-                  installCommand={`curl -fsSL ${origin}/install.sh | bash`}
+                  installUrl={`${origin}/install.sh`}
                   advanced={
                     <>
+                      <div className="mb-2 space-y-1 border-b border-border pb-2">
+                        <CoverageRow name="Claude Code — CLI" status="certified" />
+                        <CoverageRow name="Claude Code — VS Code extension" status="needs_certification" />
+                        <CoverageRow name="Claude Code — Desktop" status="needs_certification" />
+                      </div>
                       <div>Hook events wired: SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, SessionEnd</div>
                       <div>Config: ~/.claude/settings.json (global) · Credential: ~/.intentos/token</div>
                       <div>API: {API_ORIGIN}</div>
@@ -74,58 +81,32 @@ export default async function IntegrationsPage({
                   }
                 />
               ),
-              "claude-vscode": (
-                <NotCertifiedCard
-                  description="Claude Code's own VS Code extension panel, distinct from opening the CLI inside a VS Code terminal."
-                  why="Claude Code's connector writes one shared config file (~/.claude/settings.json) used by both the CLI and the extension, so this likely already works if the CLI above is connected — but that hasn't actually been tested against the extension specifically. Marked needs-certification until verified, not assumed."
-                />
-              ),
-              "claude-desktop": (
-                <NotCertifiedCard
-                  description="Claude Code running inside Anthropic's desktop app, the way Codex runs inside ChatGPT Desktop."
-                  why="Not yet investigated — it isn't confirmed whether this surface has an equivalent hook/governance mechanism at all, or how it's architected. No connector has been built."
-                />
-              ),
-              "codex-cli": (
+              codex: (
                 <InstallCard
-                  description="OpenAI's Codex CLI, run standalone in a terminal — and VS Code's integrated terminal, since it runs the identical binary."
-                  connectedTokens={codexCliTokens}
-                  installCommand={`curl -fsSL ${origin}/install-codex.sh | bash`}
-                  advanced={
-                    <>
-                      <div>Hook events wired: SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, SessionEnd</div>
-                      <div>Config: ~/.codex/hooks.json (global) · Credential inline in the hook command</div>
-                      <div>
-                        First real action may prompt a one-time trust approval for the changed hooks.json — expected,
-                        happens once per machine.
-                      </div>
-                    </>
-                  }
-                />
-              ),
-              "codex-vscode": (
-                <NotCertifiedCard
-                  description="OpenAI's dedicated Codex panel inside VS Code — a different mechanism from just using VS Code's terminal."
-                  why="Not yet tested this round. Codex Desktop's own panel turned out to use a completely different transport (its own app-server process) than the CLI's hook file — the VS Code extension may have the same difference, so it can't be assumed covered by the CLI connector above."
-                />
-              ),
-              "codex-desktop": (
-                <InstallCard
-                  description="The ChatGPT desktop app's built-in Codex agent."
-                  connectedTokens={codexDesktopTokens}
-                  installCommand={`curl -fsSL ${origin}/install-codex-desktop.sh | bash`}
+                  description="One command governs Codex everywhere on this device — the CLI, VS Code's integrated terminal, and (macOS only) ChatGPT Desktop."
+                  connectedTokens={codexTokens}
+                  installUrl={`${origin}/install-codex-desktop.sh`}
                   extraNote={
                     <div className="rounded-lg border border-[color-mix(in_oklch,var(--status-review),transparent_65%)] bg-[var(--status-review-bg)] px-4 py-3 text-[13px] text-foreground">
-                      Beta: macOS only. Installs two small background services that keep Desktop routed through a
-                      governed connection, and disables Desktop&apos;s own Scheduled-task automation tools (everyday
-                      chat and file actions are unaffected). Fully removable — see Advanced.
+                      On macOS, this also installs two small background services that keep ChatGPT Desktop routed
+                      through a governed connection, and disables Desktop&apos;s own Scheduled-task automation tools
+                      (everyday chat and file actions are unaffected). Fully removable — see Advanced.
                     </div>
                   }
                   advanced={
                     <>
-                      <div>Runs an external `codex app-server`, managed by a LaunchAgent, that Desktop connects to</div>
-                      <div>Config: ~/.codex/hooks.json (shared with CLI) + a codex_app stub in ~/.codex/config.toml</div>
-                      <div>Uninstall: curl -fsSL {origin}/uninstall-codex-desktop.sh | bash</div>
+                      <div className="mb-2 space-y-1 border-b border-border pb-2">
+                        <CoverageRow name="Codex — CLI" status="certified" />
+                        <CoverageRow name="Codex — VS Code integrated terminal" status="certified" />
+                        <CoverageRow name="Codex — VS Code extension (dedicated panel)" status="needs_certification" />
+                        <CoverageRow name="ChatGPT Desktop — Codex" status="beta" />
+                      </div>
+                      <div>Config: ~/.codex/hooks.json (global, all surfaces) + LaunchAgents/config.toml stub for Desktop (macOS)</div>
+                      <div>
+                        First real action may prompt a one-time trust approval for the changed hooks.json — expected,
+                        happens once per machine.
+                      </div>
+                      <div>Uninstall (Desktop services): curl -fsSL {origin}/uninstall-codex-desktop.sh | bash</div>
                     </>
                   }
                 />

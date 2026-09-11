@@ -85,10 +85,24 @@ async function main() {
   await downloadTo(`${DASHBOARD_URL}/hooks/project-identity.mjs`, join(HOOKS_DIR, "project-identity.mjs"));
   console.log("✓ Connector installed to ~/.intentos/hooks");
 
+  // Set on the Integrations page before this command is generated — see the include/exclude
+  // step there. Baked into the token at approval time; "all" (the default) preserves the
+  // exact prior behavior for anyone running an older, bare install command.
+  const scopeMode = process.env.INTENTOS_SCOPE_MODE || "all";
+  const scopeProjects = (process.env.INTENTOS_SCOPE_PROJECTS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
   const startRes = await fetch(`${API_URL}/v1/devices/start`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ agent_type: "claude-code", hostname: hostname() }),
+    body: JSON.stringify({
+      agent_type: "claude-code",
+      hostname: hostname(),
+      scope_mode: scopeMode,
+      scope_projects: scopeProjects,
+    }),
   });
   if (!startRes.ok) throw new Error(`Could not start device connection (${startRes.status})`);
   const { device_code, user_code, interval } = await startRes.json();

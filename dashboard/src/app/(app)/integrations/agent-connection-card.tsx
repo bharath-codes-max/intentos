@@ -1,18 +1,19 @@
 import type { ReactNode } from "react";
-import { CopyCommand } from "./copy-command";
 import { RevokeButton } from "./revoke-button";
+import { ScopeGate } from "./scope-gate";
 
-/** For a surface with a real, working installer — shows connected devices or the install command. */
+/** For a provider with a real, working installer — shows connected devices, or the
+ *  mandatory scope step gating a fresh install command. */
 export function InstallCard({
   description,
   connectedTokens,
-  installCommand,
+  installUrl,
   advanced,
   extraNote,
 }: {
   description: string;
   connectedTokens: { id: string; label: string; created_at: string }[];
-  installCommand: string;
+  installUrl: string;
   advanced: ReactNode;
   extraNote?: ReactNode;
 }) {
@@ -23,14 +24,7 @@ export function InstallCard({
       {extraNote}
 
       {!connected ? (
-        <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-4">
-          <div className="text-[13px] font-medium text-foreground">Connect in one step</div>
-          <p className="text-[13px] text-muted-foreground">
-            Run this on the machine you want governed. It installs the connector, opens your browser to approve
-            the device, and works automatically from then on — no per-project setup.
-          </p>
-          <CopyCommand command={installCommand} />
-        </div>
+        <ScopeGate installUrl={installUrl} />
       ) : (
         <div className="space-y-3">
           <ul className="divide-y divide-border rounded-lg border border-border">
@@ -46,11 +40,9 @@ export function InstallCard({
               </li>
             ))}
           </ul>
-          <div className="flex items-center justify-between rounded-lg border border-border bg-muted/20 p-4">
-            <p className="text-[13px] text-muted-foreground">
-              Add another machine? Run{" "}
-              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[12px]">{installCommand}</code> there.
-            </p>
+          <div className="rounded-lg border border-border bg-muted/20 p-4">
+            <p className="mb-3 text-[13px] text-muted-foreground">Add another device? Configure its scope, then copy its own command.</p>
+            <ScopeGate installUrl={installUrl} />
           </div>
         </div>
       )}
@@ -61,19 +53,6 @@ export function InstallCard({
           {advanced}
         </div>
       </details>
-    </div>
-  );
-}
-
-/** For a surface with no built connector yet — never shows a fake install command. */
-export function NotCertifiedCard({ description, why }: { description: string; why: string }) {
-  return (
-    <div className="space-y-4">
-      <p className="text-[13px] text-muted-foreground">{description}</p>
-      <div className="rounded-lg border border-dashed border-border bg-muted/10 p-4">
-        <div className="text-[13px] font-medium text-foreground">Not available yet</div>
-        <p className="mt-1 text-[13px] text-muted-foreground">{why}</p>
-      </div>
     </div>
   );
 }

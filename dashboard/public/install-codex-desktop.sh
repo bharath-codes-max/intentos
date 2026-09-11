@@ -1,15 +1,16 @@
 #!/bin/sh
-# Intentos ChatGPT Desktop (Codex) connector — one-line installer. macOS only.
+# Intentos Codex connector — one-line installer. Governs the CLI and VS Code's integrated
+# terminal on any platform; on macOS, also sets up ChatGPT Desktop governance.
 # Usage: curl -fsSL https://<your-intentos-dashboard>/install-codex-desktop.sh | bash
 set -e
 
-if [ "$(uname)" != "Darwin" ]; then
-  echo "The ChatGPT Desktop connector currently only supports macOS." >&2
+if ! command -v node >/dev/null 2>&1; then
+  echo "Intentos requires Node.js (v18+). Install it from https://nodejs.org and re-run this command." >&2
   exit 1
 fi
 
-if ! command -v node >/dev/null 2>&1; then
-  echo "Intentos requires Node.js (v18+). Install it from https://nodejs.org and re-run this command." >&2
+if ! command -v codex >/dev/null 2>&1; then
+  echo "Intentos requires the Codex CLI to already be installed (npm install -g @openai/codex), then re-run this command." >&2
   exit 1
 fi
 
