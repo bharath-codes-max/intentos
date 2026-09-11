@@ -4,7 +4,7 @@ export function Code({ children, className }: { children: React.ReactNode; class
   return (
     <code
       className={cn(
-        "rounded bg-white/[0.06] px-1.5 py-0.5 font-mono text-[12px] text-foreground",
+        "rounded bg-[var(--overlay-hover)] px-1.5 py-0.5 font-mono text-[12px] text-foreground",
         className
       )}
     >
@@ -17,7 +17,10 @@ export function CodeBlock({ children, className }: { children: React.ReactNode; 
   return (
     <pre
       className={cn(
-        "overflow-x-auto rounded-none border border-border bg-black/30 p-3 font-mono text-[12px] leading-relaxed text-muted-foreground",
+        // Deliberately always-dark "terminal" look, unlike most of this app — so its own text
+        // color is fixed too, instead of the theme-adaptive --muted-foreground, which would turn
+        // dark-on-dark and become unreadable in light mode.
+        "overflow-x-auto rounded-none border border-border bg-black/30 p-3 font-mono text-[12px] leading-relaxed text-gray-300",
         className
       )}
     >

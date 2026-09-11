@@ -43,7 +43,7 @@ export function Toaster() {
             )}
           </div>
           <ToastPrimitive.Close
-            className="shrink-0 rounded p-0.5 text-faint-foreground hover:bg-white/[0.06] hover:text-foreground"
+            className="shrink-0 rounded p-0.5 text-faint-foreground hover:bg-[var(--overlay-hover)] hover:text-foreground"
             aria-label="Dismiss"
           >
             <Cross2Icon className="size-3.5" />

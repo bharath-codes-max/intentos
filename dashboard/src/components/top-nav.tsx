@@ -9,6 +9,7 @@ import { Logo } from "./logo";
 import { ALL_NAV } from "./nav-items";
 import { OrgSwitcher } from "./org-switcher";
 import { LogoutButton } from "./logout-button";
+import { ThemeToggle } from "./theme-toggle";
 import type { Org } from "@/lib/api";
 
 export function TopNav({ orgs, currentOrgId }: { orgs: Org[]; currentOrgId: string }) {
@@ -17,7 +18,7 @@ export function TopNav({ orgs, currentOrgId }: { orgs: Org[]; currentOrgId: stri
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
   return (
-    <header className="sticky top-0 z-30 border-b border-white/[0.12] bg-black shadow-[0_8px_24px_rgba(0,0,0,0.55)]">
+    <header className="sticky top-0 z-30 border-b border-border bg-background shadow-[var(--shadow-lg)]">
       <nav className="mx-auto flex max-w-[1400px] items-center gap-1 px-3 py-3.5 sm:gap-2 sm:px-4">
         <Link href="/" className="flex shrink-0 items-center gap-2 pr-1 text-foreground">
           <Logo size={22} />
@@ -33,7 +34,7 @@ export function TopNav({ orgs, currentOrgId }: { orgs: Org[]; currentOrgId: stri
                   href={item.href}
                   className={cn(
                     "flex items-center rounded-md px-2.5 py-1.5 font-mono text-[13px] whitespace-nowrap transition-colors",
-                    active ? "text-foreground" : "text-[rgba(235,235,245,0.5)] hover:text-[rgba(235,235,245,0.85)]"
+                    active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   {item.label}
@@ -44,6 +45,7 @@ export function TopNav({ orgs, currentOrgId }: { orgs: Org[]; currentOrgId: stri
         </ul>
 
         <div className="ml-auto hidden shrink-0 items-center gap-2 lg:flex">
+          <ThemeToggle />
           <OrgSwitcher orgs={orgs} currentOrgId={currentOrgId} compact />
           <LogoutButton />
         </div>
@@ -51,7 +53,7 @@ export function TopNav({ orgs, currentOrgId }: { orgs: Org[]; currentOrgId: stri
         <button
           type="button"
           onClick={() => setMobileOpen((v) => !v)}
-          className="ml-auto flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-white/[0.08] hover:text-foreground lg:hidden"
+          className="ml-auto flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-[var(--overlay-hover)] hover:text-foreground lg:hidden"
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
         >
           {mobileOpen ? <Cross1Icon className="size-4" /> : <HamburgerMenuIcon className="size-4" />}
@@ -59,7 +61,7 @@ export function TopNav({ orgs, currentOrgId }: { orgs: Org[]; currentOrgId: stri
       </nav>
 
       {mobileOpen && (
-        <div className="border-t border-white/10 bg-black p-3 lg:hidden">
+        <div className="border-t border-border bg-background p-3 lg:hidden">
           <ul className="flex flex-col gap-0.5">
             {ALL_NAV.map((item) => {
               const active = isActive(item.href);
@@ -70,7 +72,7 @@ export function TopNav({ orgs, currentOrgId }: { orgs: Org[]; currentOrgId: stri
                     onClick={() => setMobileOpen(false)}
                     className={cn(
                       "flex items-center gap-2 rounded-lg px-3 py-2 text-[14px] font-medium transition-colors",
-                      active ? "bg-white/[0.08] text-foreground" : "text-[rgba(235,235,245,0.65)] hover:text-foreground"
+                      active ? "bg-[var(--overlay-hover)] text-foreground" : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     <item.icon className="size-[15px] shrink-0" style={{ color: item.color }} />
@@ -80,7 +82,8 @@ export function TopNav({ orgs, currentOrgId }: { orgs: Org[]; currentOrgId: stri
               );
             })}
           </ul>
-          <div className="mt-3 flex items-center gap-2 border-t border-white/[0.08] pt-3">
+          <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
+            <ThemeToggle />
             <div className="flex-1">
               <OrgSwitcher orgs={orgs} currentOrgId={currentOrgId} />
             </div>

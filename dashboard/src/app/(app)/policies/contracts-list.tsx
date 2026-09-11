@@ -131,13 +131,13 @@ export function ContractsList({ contracts }: { contracts: Contract[] }) {
                   open={open}
                   onToggle={() => setOpenGroups((s) => ({ ...s, [g.key]: !s[g.key] }))}
                 />
-                {open && <div className="divide-y divide-white/[0.06]">{rows.map(renderRow)}</div>}
+                {open && <div className="divide-y divide-border">{rows.map(renderRow)}</div>}
               </div>
             );
           })}
         </div>
       ) : (
-        <div className="divide-y divide-white/[0.06]">{filtered.map(renderRow)}</div>
+        <div className="divide-y divide-border">{filtered.map(renderRow)}</div>
       )}
     </>
   );

@@ -102,7 +102,7 @@ export function PendingApprovals({ pending }: { pending: PendingApproval[] }) {
           <EmptyState icon={CheckCircledIcon} title="No matching approvals" description="Try clearing a filter or search term." />
         </div>
       ) : (
-        <div className="divide-y divide-white/[0.06]">
+        <div className="divide-y divide-border">
           {filtered.map((a) => (
             <DataRow
               key={a.id}
@@ -186,7 +186,7 @@ export function ResolvedApprovals({ resolved }: { resolved: ResolvedApproval[] }
 
   return (
     <section>
-      <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] px-4 pb-2.5">
+      <div className="flex items-center justify-between gap-2 border-b border-border px-4 pb-2.5">
         <h2 className="text-[13px] font-medium text-foreground">Recently resolved</h2>
         <div className="flex items-center gap-2">
           <Select value={filter} onValueChange={(v) => setFilter(v as ResolvedFilter)}>

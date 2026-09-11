@@ -19,9 +19,27 @@ export const metadata: Metadata = {
   description: "Permission and audit layer for AI agents.",
 };
 
+/** Runs before hydration so the correct theme class is on <html> before first paint — without
+ *  this, the page would flash the wrong theme for a frame while React boots up and reads
+ *  localStorage itself. Defaults to dark (this product's original, still-primary theme) for a
+ *  first-time visitor with nothing stored yet. */
+const THEME_INIT_SCRIPT = `
+(function () {
+  try {
+    var stored = localStorage.getItem("theme");
+    if (stored !== "light") document.documentElement.classList.add("dark");
+  } catch (e) {
+    document.documentElement.classList.add("dark");
+  }
+})();
+`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`dark ${inter.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="en" className={`${inter.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="h-full min-h-full">
         <ToastProvider>
           <TooltipProvider>{children}</TooltipProvider>

@@ -39,7 +39,7 @@ export function DataRow({
 
   const rowClassName = cn(
     "group/row relative flex items-center gap-3 px-4 py-2.5 transition-colors duration-150",
-    (href || onClick) && "cursor-pointer hover:bg-white/[0.035]",
+    (href || onClick) && "cursor-pointer hover:bg-[var(--overlay-hover)]",
     className
   );
 
@@ -48,7 +48,7 @@ export function DataRow({
       {icon && (
         <span
           className={cn(
-            "flex size-5 shrink-0 items-center justify-center rounded-md bg-white/[0.05]",
+            "flex size-5 shrink-0 items-center justify-center rounded-md bg-[var(--overlay-hover)]",
             !iconColor && toneClass,
             iconColor && "[&_svg]:!text-[var(--icon-color)]"
           )}

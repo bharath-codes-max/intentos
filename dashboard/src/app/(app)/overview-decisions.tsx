@@ -45,8 +45,8 @@ export function OverviewDecisions({ decisions }: { decisions: Decision[] }) {
   }, [decisions, decisionFilter, search, sortDir]);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-white/[0.1] bg-panel-raised shadow-[var(--shadow-md)]">
-      <div className="flex items-center justify-between border-b border-white/[0.08] px-4 py-3">
+    <section className="overflow-hidden rounded-2xl border border-border bg-panel-raised shadow-[var(--shadow-md)]">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <h2 className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
           Recent decisions
         </h2>
@@ -91,7 +91,7 @@ export function OverviewDecisions({ decisions }: { decisions: Decision[] }) {
           ) : (
             <div className="space-y-2 p-3">
               {filtered.map((d) => (
-                <div key={d.id} className="rounded-xl border border-white/[0.08] bg-panel shadow-[var(--shadow-sm)]">
+                <div key={d.id} className="rounded-xl border border-border bg-panel shadow-[var(--shadow-sm)]">
                   <DataRow
                     icon={<ToolIcon toolName={d.tool_name} />}
                     iconColor={colorFor(d.tool_name)}

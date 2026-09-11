@@ -209,7 +209,7 @@ export function ContractWizard({ agents }: { agents: { id: string; label: string
             <Input id="contract_name" value={contractName} onChange={(e) => setContractName(e.target.value)} />
           </div>
           {showRaw && (
-            <pre className="max-h-64 overflow-auto rounded-md border border-border bg-black/30 p-3 font-mono text-[12px] text-muted-foreground">
+            <pre className="max-h-64 overflow-auto rounded-md border border-border bg-black/30 p-3 font-mono text-[12px] text-gray-300">
               {JSON.stringify(rules, null, 2)}
             </pre>
           )}

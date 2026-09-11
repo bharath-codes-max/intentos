@@ -55,7 +55,86 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root,
+/* Light is the base palette (bare :root, no class needed); .dark overrides every token below.
+   Toggled by adding/removing the "dark" class on <html> — see theme-toggle.tsx and the
+   FOUC-prevention script in layout.tsx. Every consumer uses the semantic --token names below
+   (never raw white/black opacities) so the same component renders correctly in both themes
+   without per-component light/dark branching. */
+:root {
+  /* Canvas / surfaces */
+  --background: #ffffff;
+  --panel: #ffffff;
+  --panel-raised: #f4f4f6;
+  --card: var(--panel);
+  --card-foreground: var(--foreground);
+  --popover: var(--panel-raised);
+  --popover-foreground: var(--foreground);
+
+  /* Text */
+  --foreground: #17181a;
+  --muted-foreground: #66666f;
+  --faint-foreground: #9a9aa3;
+
+  /* Borders */
+  --border: rgba(0, 0, 0, 0.1);
+  --border-hover: rgba(0, 0, 0, 0.18);
+  --input: rgba(0, 0, 0, 0.07);
+  --ring: rgba(110, 98, 229, 0.45);
+
+  /* Accent (restrained indigo/violet — never purple-branded) */
+  --primary: #6152d9;
+  --primary-hover: #5346c4;
+  --primary-foreground: #ffffff;
+  --accent: rgba(110, 98, 229, 0.1);
+  --accent-foreground: #4c3fc7;
+
+  --secondary: #f1f1f3;
+  --secondary-foreground: var(--foreground);
+  --muted: #f1f1f3;
+  --destructive: #d1352b;
+
+  /* Governance status — ALLOW / REVIEW / BLOCK only */
+  --status-allow: #22883a;
+  --status-allow-bg: rgba(34, 136, 58, 0.1);
+  --status-review: #a3760f;
+  --status-review-bg: rgba(163, 118, 15, 0.1);
+  --status-block: #d1352b;
+  --status-block-bg: rgba(209, 53, 43, 0.1);
+
+  /* A translucent tint relative to the foreground color, for hover/overlay states that must
+     read correctly in both themes — 4-8% of foreground reads as a faint highlight on dark and
+     a faint shade on light, instead of a hardcoded white overlay that vanishes on light. */
+  --overlay-subtle: color-mix(in oklch, var(--foreground), transparent 96%);
+  --overlay-hover: color-mix(in oklch, var(--foreground), transparent 92%);
+  --overlay-strong: color-mix(in oklch, var(--foreground), transparent 85%);
+
+  /* Elevation — layered shadows for surfaces that sit "above" the canvas (cards, dropdowns,
+     toolbars). A thin inset highlight + soft drop shadow reads as a physically raised panel
+     instead of a flat, same-plane rectangle — this is the main thing distinguishing a premium
+     UI from a flat one, since color alone (panel vs background) barely registers at this
+     tonal distance. */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.03) inset;
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.03) inset;
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(0, 0, 0, 0.03) inset;
+
+  --chart-1: var(--primary);
+  --chart-2: var(--status-allow);
+  --chart-3: var(--status-review);
+  --chart-4: var(--status-block);
+  --chart-5: var(--faint-foreground);
+
+  --radius: 6px;
+
+  --sidebar: var(--background);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--foreground);
+  --sidebar-accent: var(--overlay-subtle);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+}
+
 .dark {
   /* Canvas / surfaces */
   --background: #101112;
@@ -97,6 +176,10 @@
   --status-block: #e5534b;
   --status-block-bg: rgba(229, 83, 75, 0.12);
 
+  --overlay-subtle: rgba(255, 255, 255, 0.02);
+  --overlay-hover: rgba(255, 255, 255, 0.045);
+  --overlay-strong: rgba(255, 255, 255, 0.08);
+
   /* Elevation — layered shadows for surfaces that sit "above" the canvas (cards, dropdowns,
      toolbars). A thin inset highlight + soft drop shadow reads as a physically raised panel
      instead of a flat, same-plane rectangle — this is the main thing distinguishing a premium
@@ -124,9 +207,9 @@
   --sidebar-ring: var(--ring);
 }
 
-/* Scoped light override for the (auth) left panel only — the rest of the product is dark-only
-   (see :root/.dark above), so this exists purely to give login/signup a white canvas without
-   introducing a real light theme app-wide. */
+/* Scoped light override for the (auth) left panel — unaffected by the dark/light toggle, since
+   the auth page's split layout always wants a white left / dark right regardless of the user's
+   chosen app theme (there's no signed-in session yet to have a preference for). */
 .auth-light {
   --background: #ffffff;
   --panel: #ffffff;
@@ -136,6 +219,9 @@
   --input: rgba(0, 0, 0, 0.06);
   --muted: #f4f4f6;
   --destructive: #d1352b;
+  --overlay-subtle: rgba(0, 0, 0, 0.02);
+  --overlay-hover: rgba(0, 0, 0, 0.045);
+  --overlay-strong: rgba(0, 0, 0, 0.08);
 }
 
 @layer base {
