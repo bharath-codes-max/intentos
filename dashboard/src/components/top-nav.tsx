@@ -17,7 +17,7 @@ export function TopNav({ orgs, currentOrgId }: { orgs: Org[]; currentOrgId: stri
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
   return (
-    <header className="sticky top-0 z-30 border-b border-white/10 bg-black">
+    <header className="sticky top-0 z-30 border-b border-white/[0.12] bg-black shadow-[0_8px_24px_rgba(0,0,0,0.55)]">
       <nav className="mx-auto flex max-w-[1400px] items-center gap-1 px-3 py-3.5 sm:gap-2 sm:px-4">
         <Link href="/" className="flex shrink-0 items-center gap-2 pr-1 text-foreground">
           <Logo size={22} />
