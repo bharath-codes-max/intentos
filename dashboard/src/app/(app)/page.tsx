@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MetricCard } from "@/components/ui/metric-card";
-import { decisionSummary, listDecisions, listApprovals, listTokens } from "@/lib/api";
+import { ActivityBarChart } from "@/components/ui/activity-bar-chart";
+import { decisionSummary, listDecisions, listApprovals, listTokens, dailyDecisionCounts, type DailyDecisionCount } from "@/lib/api";
 import { getCurrentOrgId } from "@/lib/current-org";
 import { LiveRefresh } from "@/components/live-refresh";
 import { PageHeader } from "@/components/ui/page-header";
@@ -17,11 +18,22 @@ import {
 
 export default async function OverviewPage() {
   const orgId = await getCurrentOrgId();
-  const [summary, decisions, approvals, tokens] = await Promise.all([
+  const [summary, decisions, approvals, tokens, daily] = await Promise.all([
     decisionSummary(orgId),
     listDecisions(orgId, 8),
     listApprovals(orgId),
     listTokens(orgId),
+    // Falls back to an empty week rather than crashing the whole page if this specific
+    // endpoint isn't deployed yet (e.g. API redeploy still pending after a dashboard push).
+    dailyDecisionCounts(orgId).catch((): DailyDecisionCount[] => {
+      const days: DailyDecisionCount[] = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        days.push({ day: d.toISOString().slice(0, 10), count: 0 });
+      }
+      return days;
+    }),
   ]);
 
   const total = Number(summary.total);
@@ -49,7 +61,7 @@ export default async function OverviewPage() {
       </div>
 
       {approvals.length > 0 && (
-        <div className="rounded-none border border-[color-mix(in_oklch,var(--status-review),transparent_60%)] bg-[var(--status-review-bg)] px-4 py-3">
+        <div className="rounded-2xl border border-[color-mix(in_oklch,var(--status-review),transparent_60%)] bg-[var(--status-review-bg)] px-4 py-3">
           <div className="flex items-center justify-between">
             <p className="text-[13px] font-medium text-foreground">
               {approvals.length} action{approvals.length === 1 ? "" : "s"} waiting on your approval
@@ -63,6 +75,8 @@ export default async function OverviewPage() {
           </div>
         </div>
       )}
+
+      <ActivityBarChart data={daily} />
 
       <OverviewDecisions decisions={decisions} />
     </div>

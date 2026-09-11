@@ -45,6 +45,20 @@ export async function decisionsRoutes(app: FastifyInstance) {
     `;
   });
 
+  /** Checks per day for the last 7 days, zero-filled via generate_series so a quiet day still
+   *  shows as a real 0 bar instead of just being absent — used by the Overview page's activity
+   *  chart. */
+  app.get("/v1/decisions/daily", { preHandler: requireAdmin }, async (req) => {
+    const { org_id } = req.query as { org_id?: string };
+    return sql`
+      select d.day::date as day, coalesce(count(dec.id), 0)::int as count
+      from generate_series((now() - interval '6 days')::date, now()::date, interval '1 day') as d(day)
+      left join decisions dec on dec.org_id = ${org_id ?? null} and dec.created_at::date = d.day
+      group by d.day
+      order by d.day asc
+    `;
+  });
+
   app.get("/v1/decisions/summary", { preHandler: requireAdmin }, async (req) => {
     const { org_id } = req.query as { org_id?: string };
     const [row] = await sql`

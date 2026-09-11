@@ -45,7 +45,7 @@ export function OverviewDecisions({ decisions }: { decisions: Decision[] }) {
   }, [decisions, decisionFilter, search, sortDir]);
 
   return (
-    <section className="rounded-none border border-white/[0.1] bg-panel-raised shadow-[0_4px_16px_rgba(0,0,0,0.3)]">
+    <section className="overflow-hidden rounded-2xl border border-white/[0.1] bg-panel-raised shadow-[var(--shadow-md)]">
       <div className="flex items-center justify-between border-b border-white/[0.08] px-4 py-3">
         <h2 className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
           Recent decisions
@@ -89,29 +89,30 @@ export function OverviewDecisions({ decisions }: { decisions: Decision[] }) {
               <EmptyState icon={MixIcon} title="No matching decisions" description="Try clearing a filter or search term." />
             </div>
           ) : (
-            <div className="divide-y divide-white/[0.06]">
+            <div className="space-y-2 p-3">
               {filtered.map((d) => (
-                <DataRow
-                  key={d.id}
-                  icon={<ToolIcon toolName={d.tool_name} />}
-                  iconColor={colorFor(d.tool_name)}
-                  trailing={
-                    <>
-                      <VerdictBadge verdict={d.decision} />
-                      <ExecutionStatusBadge
-                        status={d.approval_status ?? (d.decision === "allow" ? "executed" : "attempted")}
-                      />
-                      <span className="w-16 shrink-0 text-right text-[12px] text-muted-foreground">
-                        {timeAgo(d.created_at)}
-                      </span>
-                    </>
-                  }
-                >
-                  <p className="truncate text-[13px] font-medium text-foreground">{d.reason}</p>
-                  <p className="mt-0.5 truncate font-mono text-[12px] text-muted-foreground">
-                    {d.tool_name} · {d.agent_label ?? "Unknown agent"}
-                  </p>
-                </DataRow>
+                <div key={d.id} className="rounded-xl border border-white/[0.08] bg-panel shadow-[var(--shadow-sm)]">
+                  <DataRow
+                    icon={<ToolIcon toolName={d.tool_name} />}
+                    iconColor={colorFor(d.tool_name)}
+                    trailing={
+                      <>
+                        <VerdictBadge verdict={d.decision} />
+                        <ExecutionStatusBadge
+                          status={d.approval_status ?? (d.decision === "allow" ? "executed" : "attempted")}
+                        />
+                        <span className="w-16 shrink-0 text-right text-[12px] text-muted-foreground">
+                          {timeAgo(d.created_at)}
+                        </span>
+                      </>
+                    }
+                  >
+                    <p className="truncate text-[13px] font-medium text-foreground">{d.reason}</p>
+                    <p className="mt-0.5 truncate font-mono text-[12px] text-muted-foreground">
+                      {d.tool_name} · {d.agent_label ?? "Unknown agent"}
+                    </p>
+                  </DataRow>
+                </div>
               ))}
             </div>
           )}

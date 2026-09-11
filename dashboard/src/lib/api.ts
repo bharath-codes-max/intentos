@@ -185,6 +185,15 @@ export function decisionSummary(orgId: string) {
   return api<DecisionSummary>(`/v1/decisions/summary?org_id=${orgId}`);
 }
 
+export interface DailyDecisionCount {
+  day: string;
+  count: number;
+}
+
+export function dailyDecisionCounts(orgId: string) {
+  return api<DailyDecisionCount[]>(`/v1/decisions/daily?org_id=${orgId}`);
+}
+
 export function listTokens(orgId: string) {
   return api<AgentToken[]>(`/v1/tokens?org_id=${orgId}`);
 }

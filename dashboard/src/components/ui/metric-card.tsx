@@ -1,6 +1,6 @@
 import { ComponentType, CSSProperties } from "react";
 
-/** Grey matte metric card — solid panel-raised surface, white 28px number, one colored icon. */
+/** Rounded matte metric card — icon badge + label up top, big bold number below. */
 export function MetricCard({
   label,
   value,
@@ -13,10 +13,17 @@ export function MetricCard({
   icon: ComponentType<{ className?: string; style?: CSSProperties }>;
 }) {
   return (
-    <div className="rounded-none border border-white/[0.1] bg-panel-raised px-4 py-3.5 shadow-[0_6px_20px_rgba(0,0,0,0.4)] transition-transform duration-200 ease-out will-change-transform hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(0,0,0,0.5)]">
-      <Icon className="size-4" style={{ color: iconColor }} />
-      <p className="mt-3 text-[28px] font-bold tabular-nums leading-none tracking-tight text-white">{value}</p>
-      <p className="mt-1.5 text-[12.5px] font-medium text-muted-foreground">{label}</p>
+    <div className="rounded-2xl border border-white/[0.08] bg-panel-raised px-4 py-4 shadow-[var(--shadow-md)] transition-transform duration-200 ease-out will-change-transform hover:-translate-y-1 hover:shadow-[var(--shadow-lg)]">
+      <div className="flex items-center gap-2">
+        <span
+          className="flex size-7 shrink-0 items-center justify-center rounded-lg"
+          style={{ background: iconColor + "22", color: iconColor }}
+        >
+          <Icon className="size-4" />
+        </span>
+        <p className="text-[12.5px] font-medium text-muted-foreground">{label}</p>
+      </div>
+      <p className="mt-3 text-[30px] font-bold tabular-nums leading-none tracking-tight text-white">{value}</p>
     </div>
   );
 }
