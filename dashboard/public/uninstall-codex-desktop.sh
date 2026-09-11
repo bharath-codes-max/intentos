@@ -29,5 +29,5 @@ else
 fi
 
 echo ""
-echo "Done. Quit and reopen ChatGPT Desktop — it will go back to spawning its own"
-echo "private app-server, exactly as it did before Intentos was connected."
+echo "Done. Quit and reopen ChatGPT Desktop — Codex inside it will go back to spawning its"
+echo "own private app-server, exactly as it did before Intentos was connected."

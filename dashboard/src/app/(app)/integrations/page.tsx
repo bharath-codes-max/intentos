@@ -83,14 +83,14 @@ export default async function IntegrationsPage({
               ),
               codex: (
                 <InstallCard
-                  description="One command governs Codex everywhere on this device — the CLI, VS Code's integrated terminal, and (macOS only) ChatGPT Desktop."
+                  description="One command governs Codex everywhere on this device — the CLI, VS Code's integrated terminal, and Codex inside ChatGPT Desktop."
                   connectedTokens={codexTokens}
                   installUrl={`${origin}/install-codex-desktop.sh`}
                   extraNote={
                     <div className="rounded-lg border border-[color-mix(in_oklch,var(--status-review),transparent_65%)] bg-[var(--status-review-bg)] px-4 py-3 text-[13px] text-foreground">
-                      On macOS, this also installs two small background services that keep ChatGPT Desktop routed
-                      through a governed connection, and disables Desktop&apos;s own Scheduled-task automation tools
-                      (everyday chat and file actions are unaffected). Fully removable — see Advanced.
+                      On macOS and Windows, this also installs two small background services that keep Codex inside
+                      ChatGPT Desktop routed through a governed connection (everyday chat and file actions are
+                      unaffected). Fully removable — see Advanced.
                     </div>
                   }
                   advanced={
@@ -99,14 +99,14 @@ export default async function IntegrationsPage({
                         <CoverageRow name="Codex — CLI" status="certified" />
                         <CoverageRow name="Codex — VS Code integrated terminal" status="certified" />
                         <CoverageRow name="Codex — VS Code extension (dedicated panel)" status="needs_certification" />
-                        <CoverageRow name="ChatGPT Desktop — Codex" status="beta" />
+                        <CoverageRow name="Codex inside ChatGPT Desktop" status="beta" />
                       </div>
-                      <div>Config: ~/.codex/hooks.json (global, all surfaces) + LaunchAgents/config.toml stub for Desktop (macOS)</div>
+                      <div>Config: ~/.codex/hooks.json (global, all surfaces) + a background service + config.toml stub for Desktop (macOS/Windows)</div>
                       <div>
                         First real action may prompt a one-time trust approval for the changed hooks.json — expected,
                         happens once per machine.
                       </div>
-                      <div>Uninstall (Desktop services): curl -fsSL {origin}/uninstall-codex-desktop.sh | bash</div>
+                      <div>Uninstall (macOS Desktop services): curl -fsSL {origin}/uninstall-codex-desktop.sh | bash</div>
                     </>
                   }
                 />

@@ -1,6 +1,6 @@
 #!/bin/sh
 # Intentos Codex connector — one-line installer. Governs the CLI and VS Code's integrated
-# terminal on any platform; on macOS, also sets up ChatGPT Desktop governance.
+# terminal on any platform; on macOS and Windows, also governs Codex inside ChatGPT Desktop.
 # Usage: curl -fsSL https://<your-intentos-dashboard>/install-codex-desktop.sh | bash
 set -e
 
