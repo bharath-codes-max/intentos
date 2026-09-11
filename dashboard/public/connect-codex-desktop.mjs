@@ -89,11 +89,16 @@ function mergeHookBlock(existing, token) {
   const block = (command, timeout) => ({ hooks: [{ type: "command", command, timeout }] });
   const settings = existing && typeof existing === "object" ? { ...existing } : {};
   settings.hooks = settings.hooks && typeof settings.hooks === "object" ? { ...settings.hooks } : {};
-  const alreadyWired = (eventName) =>
-    Array.isArray(settings.hooks[eventName]) &&
-    settings.hooks[eventName].some((group) =>
-      (group.hooks ?? []).some((h) => typeof h.command === "string" && h.command.includes("intentos-hook.mjs"))
+  // Strip any PRIOR Intentos entry for this event first, then add the current one — a fresh
+  // install (new token, new scope) must replace stale wiring, not silently keep whatever
+  // token happened to be there before. Any non-Intentos hooks the user added for other
+  // purposes are left untouched.
+  const stripStale = (eventName) => {
+    if (!Array.isArray(settings.hooks[eventName])) return [];
+    return settings.hooks[eventName].filter(
+      (group) => !(group.hooks ?? []).some((h) => typeof h.command === "string" && h.command.includes("intentos-hook.mjs"))
     );
+  };
   const events = {
     SessionStart: { command: nodeCmd, timeout: 15 },
     UserPromptSubmit: { command: nodeCmd, timeout: 15 },
@@ -102,10 +107,9 @@ function mergeHookBlock(existing, token) {
     SessionEnd: { command: nodeCmd, timeout: 3 },
   };
   for (const [event, cfg] of Object.entries(events)) {
-    if (alreadyWired(event)) continue;
     const entry = block(cfg.command, cfg.timeout);
     if (cfg.matcher) entry.matcher = cfg.matcher;
-    settings.hooks[event] = Array.isArray(settings.hooks[event]) ? [...settings.hooks[event], entry] : [entry];
+    settings.hooks[event] = [...stripStale(event), entry];
   }
   return settings;
 }

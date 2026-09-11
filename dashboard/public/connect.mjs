@@ -54,13 +54,18 @@ function mergeHookBlock(existing) {
   const settings = existing && typeof existing === "object" ? { ...existing } : {};
   settings.hooks = settings.hooks && typeof settings.hooks === "object" ? { ...settings.hooks } : {};
 
-  // Preserve any hooks the user already has for OTHER matchers/events; only add ours if
-  // an Intentos hook isn't already present for that event (idempotent re-install).
-  const alreadyWired = (eventName) =>
-    Array.isArray(settings.hooks[eventName]) &&
-    settings.hooks[eventName].some((group) =>
-      (group.hooks ?? []).some((h) => typeof h.command === "string" && h.command.includes("intentos-hook.mjs"))
+  // Strip any PRIOR Intentos entry for this event first, then add the current one — a fresh
+  // install must replace stale wiring (e.g. an old timeout/matcher), not silently keep
+  // whatever was there before. Any non-Intentos hooks the user added for other purposes are
+  // left untouched. (Claude Code's token itself lives in ~/.intentos/token, not inline here,
+  // so re-installing already picks up a new token regardless — this replace is for the
+  // command/timeout/matcher shape staying current too.)
+  const stripStale = (eventName) => {
+    if (!Array.isArray(settings.hooks[eventName])) return [];
+    return settings.hooks[eventName].filter(
+      (group) => !(group.hooks ?? []).some((h) => typeof h.command === "string" && h.command.includes("intentos-hook.mjs"))
     );
+  };
 
   for (const [event, cfg] of Object.entries({
     SessionStart: { timeout: 15 },
@@ -69,10 +74,9 @@ function mergeHookBlock(existing) {
     PostToolUse: { timeout: 15, matcher: ".*" },
     SessionEnd: { timeout: 15 },
   })) {
-    if (alreadyWired(event)) continue;
     const entry = { ...block(cfg.timeout, cfg.extraEnv) };
     if (cfg.matcher) entry.matcher = cfg.matcher;
-    settings.hooks[event] = Array.isArray(settings.hooks[event]) ? [...settings.hooks[event], entry] : [entry];
+    settings.hooks[event] = [...stripStale(event), entry];
   }
   return settings;
 }
