@@ -1,54 +1,96 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ClaudeIcon, CursorIcon, CopilotIcon, CodexIcon } from "@/components/agent-icons";
+import { Select, SelectContent, SelectItem, SelectGroup, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SurfaceIcon } from "@/components/agent-icons";
 
-const AGENTS = [
-  { id: "claude-code", label: "Claude Code", icon: ClaudeIcon, available: true },
-  { id: "codex-cli", label: "Codex — CLI / VS Code", icon: CodexIcon, available: true },
-  { id: "codex-desktop", label: "ChatGPT Desktop (Codex)", icon: CodexIcon, available: true },
-  { id: "cursor", label: "Cursor", icon: CursorIcon, available: false },
-  { id: "github-copilot", label: "GitHub Copilot", icon: CopilotIcon, available: false },
-] as const;
+export type SurfaceStatus = "connected" | "not_connected" | "beta" | "needs_certification";
 
-export function AgentPicker({ content }: { content: Record<string, ReactNode> }) {
-  const [selected, setSelected] = useState<string>("claude-code");
-  const agent = AGENTS.find((a) => a.id === selected) ?? AGENTS[0];
-  const Icon = agent.icon;
+export interface SurfaceDef {
+  id: string;
+  provider: "claude" | "codex";
+  surface: "cli" | "vscode" | "desktop";
+  group: "Anthropic" | "OpenAI";
+  label: string;
+}
+
+export const SURFACES: SurfaceDef[] = [
+  { id: "claude-cli", provider: "claude", surface: "cli", group: "Anthropic", label: "Claude Code — CLI" },
+  { id: "claude-vscode", provider: "claude", surface: "vscode", group: "Anthropic", label: "Claude Code — VS Code Extension" },
+  { id: "claude-desktop", provider: "claude", surface: "desktop", group: "Anthropic", label: "Claude Desktop" },
+  { id: "codex-cli", provider: "codex", surface: "cli", group: "OpenAI", label: "Codex — CLI" },
+  { id: "codex-vscode", provider: "codex", surface: "vscode", group: "OpenAI", label: "Codex — VS Code Extension" },
+  { id: "codex-desktop", provider: "codex", surface: "desktop", group: "OpenAI", label: "ChatGPT Desktop — Codex" },
+];
+
+const STATUS_META: Record<SurfaceStatus, { label: string; className: string }> = {
+  connected: {
+    label: "Connected",
+    className: "border-[color-mix(in_oklch,var(--status-allow),transparent_65%)] bg-[var(--status-allow-bg)] text-foreground",
+  },
+  not_connected: {
+    label: "Not connected",
+    className: "border-border bg-muted/40 text-muted-foreground",
+  },
+  beta: {
+    label: "Beta",
+    className: "border-[color-mix(in_oklch,var(--status-review),transparent_60%)] bg-[var(--status-review-bg)] text-foreground",
+  },
+  needs_certification: {
+    label: "Needs certification",
+    className: "border-dashed border-border bg-muted/20 text-muted-foreground",
+  },
+};
+
+export function StatusPill({ status }: { status: SurfaceStatus }) {
+  const meta = STATUS_META[status];
+  return (
+    <span className={`rounded-full border px-3 py-1 text-[12px] font-medium ${meta.className}`}>{meta.label}</span>
+  );
+}
+
+export function AgentPicker({
+  content,
+  statuses,
+}: {
+  content: Record<string, ReactNode>;
+  statuses: Record<string, SurfaceStatus>;
+}) {
+  const [selected, setSelected] = useState<string>("claude-cli");
+  const surface = SURFACES.find((s) => s.id === selected) ?? SURFACES[0];
+
+  const grouped = { Anthropic: SURFACES.filter((s) => s.group === "Anthropic"), OpenAI: SURFACES.filter((s) => s.group === "OpenAI") };
 
   return (
     <div className="space-y-5">
       <Select value={selected} onValueChange={setSelected}>
-        <SelectTrigger className="w-64">
+        <SelectTrigger className="w-80">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {AGENTS.map((a) => (
-            <SelectItem key={a.id} value={a.id} className="py-1.5">
-              <a.icon size={18} />
-              {a.label}
-              {!a.available && <span className="ml-1.5 text-muted-foreground">· soon</span>}
-            </SelectItem>
+          {(Object.keys(grouped) as (keyof typeof grouped)[]).map((groupName) => (
+            <SelectGroup key={groupName}>
+              <SelectLabel>{groupName}</SelectLabel>
+              {grouped[groupName].map((s) => (
+                <SelectItem key={s.id} value={s.id} className="py-1.5">
+                  <SurfaceIcon provider={s.provider} surface={s.surface} size={18} />
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectGroup>
           ))}
         </SelectContent>
       </Select>
 
-      {agent.available ? (
-        content[agent.id]
-      ) : (
-        <div className="flex items-center gap-3 rounded-lg border border-dashed border-border bg-muted/10 p-5">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/40">
-            <Icon size={20} />
-          </div>
-          <div>
-            <div className="text-[13px] font-medium text-foreground">{agent.label} — coming soon</div>
-            <div className="text-[12px] text-muted-foreground">
-              Governance for {agent.label} isn&apos;t wired up yet.
-            </div>
-          </div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <SurfaceIcon provider={surface.provider} surface={surface.surface} size={28} />
+          <div className="text-[15px] font-semibold text-foreground">{surface.label}</div>
         </div>
-      )}
+        <StatusPill status={statuses[surface.id] ?? "needs_certification"} />
+      </div>
+
+      {content[surface.id]}
     </div>
   );
 }
