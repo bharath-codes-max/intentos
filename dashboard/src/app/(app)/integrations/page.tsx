@@ -56,7 +56,7 @@ export default async function IntegrationsPage({
       />
 
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="p-8">
           <AgentPicker
             statuses={statuses}
             content={{
@@ -82,8 +82,8 @@ export default async function IntegrationsPage({
               ),
               "claude-desktop": (
                 <NotCertifiedCard
-                  description="Anthropic's standalone desktop chat app, if it runs coding-agent actions the same way Claude Code does."
-                  why="Not yet investigated — it isn't confirmed whether Claude Desktop has an equivalent hook/governance mechanism at all. No connector has been built."
+                  description="Claude Code running inside Anthropic's desktop app, the way Codex runs inside ChatGPT Desktop."
+                  why="Not yet investigated — it isn't confirmed whether this surface has an equivalent hook/governance mechanism at all, or how it's architected. No connector has been built."
                 />
               ),
               "codex-cli": (

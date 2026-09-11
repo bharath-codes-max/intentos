@@ -17,7 +17,7 @@ export interface SurfaceDef {
 export const SURFACES: SurfaceDef[] = [
   { id: "claude-cli", provider: "claude", surface: "cli", group: "Anthropic", label: "Claude Code — CLI" },
   { id: "claude-vscode", provider: "claude", surface: "vscode", group: "Anthropic", label: "Claude Code — VS Code Extension" },
-  { id: "claude-desktop", provider: "claude", surface: "desktop", group: "Anthropic", label: "Claude Desktop" },
+  { id: "claude-desktop", provider: "claude", surface: "desktop", group: "Anthropic", label: "Claude Code — Desktop" },
   { id: "codex-cli", provider: "codex", surface: "cli", group: "OpenAI", label: "Codex — CLI" },
   { id: "codex-vscode", provider: "codex", surface: "vscode", group: "OpenAI", label: "Codex — VS Code Extension" },
   { id: "codex-desktop", provider: "codex", surface: "desktop", group: "OpenAI", label: "ChatGPT Desktop — Codex" },
@@ -45,7 +45,7 @@ const STATUS_META: Record<SurfaceStatus, { label: string; className: string }> =
 export function StatusPill({ status }: { status: SurfaceStatus }) {
   const meta = STATUS_META[status];
   return (
-    <span className={`rounded-full border px-3 py-1 text-[12px] font-medium ${meta.className}`}>{meta.label}</span>
+    <span className={`rounded-full border px-4 py-1.5 text-[13px] font-medium ${meta.className}`}>{meta.label}</span>
   );
 }
 
@@ -62,18 +62,20 @@ export function AgentPicker({
   const grouped = { Anthropic: SURFACES.filter((s) => s.group === "Anthropic"), OpenAI: SURFACES.filter((s) => s.group === "OpenAI") };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-7">
       <Select value={selected} onValueChange={setSelected}>
-        <SelectTrigger className="w-80">
+        <SelectTrigger className="h-14 w-full max-w-xl rounded-xl px-4 text-[15px] sm:w-[28rem]">
           <SelectValue />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="min-w-[28rem]">
           {(Object.keys(grouped) as (keyof typeof grouped)[]).map((groupName) => (
             <SelectGroup key={groupName}>
-              <SelectLabel>{groupName}</SelectLabel>
+              <SelectLabel className="px-2 py-2 text-[12px] font-semibold tracking-wide text-muted-foreground uppercase">
+                {groupName}
+              </SelectLabel>
               {grouped[groupName].map((s) => (
-                <SelectItem key={s.id} value={s.id} className="py-1.5">
-                  <SurfaceIcon provider={s.provider} surface={s.surface} size={18} />
+                <SelectItem key={s.id} value={s.id} className="gap-3 rounded-lg py-2.5 pl-3 text-[14px]">
+                  <SurfaceIcon provider={s.provider} surface={s.surface} size={26} />
                   {s.label}
                 </SelectItem>
               ))}
@@ -82,10 +84,10 @@ export function AgentPicker({
         </SelectContent>
       </Select>
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <SurfaceIcon provider={surface.provider} surface={surface.surface} size={28} />
-          <div className="text-[15px] font-semibold text-foreground">{surface.label}</div>
+      <div className="flex items-center justify-between rounded-xl border border-border bg-muted/10 p-5">
+        <div className="flex items-center gap-4">
+          <SurfaceIcon provider={surface.provider} surface={surface.surface} size={44} />
+          <div className="text-[19px] font-semibold text-foreground">{surface.label}</div>
         </div>
         <StatusPill status={statuses[surface.id] ?? "needs_certification"} />
       </div>
